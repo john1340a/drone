@@ -1,0 +1,322 @@
+/* === Variables CSS === */
+:root {
+    --primary-color: #2185d0;
+    --secondary-color: #f2711c;
+    --success-color: #21ba45;
+    --warning-color: #fbbd08;
+    --error-color: #db2828;
+
+    --sidebar-width: 300px;
+    --header-height: 60px;
+
+    --border-radius: 4px;
+    --box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+    --breakpoint-mobile: 768px;
+    --breakpoint-tablet: 992px;
+}
+
+/* === Reset et base === */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Lato', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* === Layout principal === */
+.ui.grid {
+    margin: 0 !important;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.ui.grid > .column {
+    padding: 0 !important;
+}
+
+/* === Header === */
+.ui.secondary.menu {
+    background-color: white;
+    border-bottom: 1px solid #e0e0e0;
+    box-shadow: var(--box-shadow);
+    margin: 0 !important;
+    border-radius: 0 !important;
+    height: var(--header-height);
+    align-items: center;
+}
+
+.ui.secondary.menu .item {
+    padding: 0 1rem;
+}
+
+.ui.secondary.menu .header {
+    margin: 0;
+}
+
+.ui.secondary.menu .right.menu {
+    margin-left: auto;
+}
+
+/* === Sidebar === */
+#sidebar {
+    background-color: white;
+    border-right: 1px solid #e0e0e0;
+    box-shadow: var(--box-shadow);
+    height: calc(100vh - var(--header-height));
+    overflow-y: auto;
+    padding: 1rem !important;
+    width: var(--sidebar-width);
+}
+
+#sidebar .ui.segment {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+}
+
+#sidebar .ui.accordion {
+    margin-bottom: 2rem;
+}
+
+#sidebar .ui.accordion .title {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 0.5rem;
+}
+
+#sidebar .ui.accordion .content {
+    padding: 1rem;
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+}
+
+#sidebar .ui.list .item {
+    padding: 0.5rem 0;
+}
+
+/* === Carte === */
+#map-container {
+    height: calc(100vh - var(--header-height));
+    position: relative;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+    background-color: #f0f0f0;
+}
+
+/* === Contrôles de la carte === */
+.leaflet-control-container {
+    font-family: inherit;
+}
+
+.leaflet-popup-content-wrapper {
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+}
+
+.leaflet-popup-content {
+    margin: 0.75rem;
+    line-height: 1.4;
+}
+
+/* === Légende === */
+#legend-content {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    border: 1px solid #e0e0e0;
+}
+
+#legend-content .ui.list .item {
+    display: flex;
+    align-items: center;
+    padding: 0.25rem 0;
+}
+
+/* === Boutons === */
+.ui.button {
+    border-radius: var(--border-radius);
+    transition: all 0.2s ease;
+}
+
+.ui.button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* === Sidebar mobile === */
+#mobile-sidebar {
+    background-color: rgba(0,0,0,0.9) !important;
+}
+
+#mobile-sidebar .item {
+    color: white !important;
+}
+
+/* === Messages et notifications === */
+.ui.message {
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+}
+
+.ui.negative.message {
+    background-color: #fff6f6;
+    border: 1px solid #e0b4b4;
+    color: var(--error-color);
+}
+
+.ui.positive.message {
+    background-color: #fcfff5;
+    border: 1px solid #a3c293;
+    color: var(--success-color);
+}
+
+/* === Responsive Design === */
+
+/* Tablets */
+@media screen and (max-width: 992px) {
+    #sidebar {
+        width: 250px;
+    }
+
+    .ui.secondary.menu .header .content {
+        font-size: 1.1em;
+    }
+}
+
+/* Mobile */
+@media screen and (max-width: 768px) {
+    /* Masquer la sidebar desktop sur mobile */
+    #sidebar {
+        display: none !important;
+    }
+
+    /* Pleine largeur pour la carte sur mobile */
+    #map-container {
+        width: 100% !important;
+        flex: 0 0 100% !important;
+    }
+
+    /* Ajuster la taille du header sur mobile */
+    .ui.secondary.menu .header .content {
+        font-size: 1em;
+    }
+
+    .ui.secondary.menu .header .sub.header {
+        display: none;
+    }
+
+    /* Bouton toggle layers visible sur mobile */
+    #toggle-layers {
+        display: block !important;
+    }
+
+    /* Style du sidebar mobile */
+    .ui.sidebar {
+        width: 280px !important;
+        background-color: rgba(0,0,0,0.95) !important;
+    }
+}
+
+/* Très petits écrans */
+@media screen and (max-width: 480px) {
+    .ui.secondary.menu {
+        height: 50px;
+    }
+
+    #map-container {
+        height: calc(100vh - 50px);
+    }
+
+    .ui.secondary.menu .item {
+        padding: 0 0.5rem;
+    }
+
+    .ui.button {
+        padding: 0.5rem 1rem;
+        font-size: 0.9em;
+    }
+}
+
+/* === Améliorations de performance === */
+#map {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+.leaflet-container {
+    font-family: inherit;
+}
+
+/* === Animations === */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ui.segment,
+.ui.message {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* === États de chargement === */
+.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* === Accessibilité === */
+.ui.button:focus,
+.ui.checkbox input:focus ~ label::before {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* === Print styles === */
+@media print {
+    #sidebar,
+    .ui.secondary.menu {
+        display: none !important;
+    }
+
+    #map-container {
+        width: 100% !important;
+        height: 100vh !important;
+    }
+}

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIG Restrictions Drone</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="node_modules/leaflet/dist/leaflet.css" />
+    <!-- Leaflet MiniMap CSS -->
+    <link rel="stylesheet" href="node_modules/leaflet-minimap/dist/Control.MiniMap.min.css" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #map {
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Titre sous forme de contrôle Leaflet */
+        .map-title-control {
+            background: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            border: 2px solid rgba(0,0,0,0.2);
+        }
+
+        /* Légende Leaflet native */
+        .info {
+            padding: 6px 8px;
+            font: 14px/16px Arial, Helvetica, sans-serif;
+            background: white;
+            background: rgba(255,255,255,0.8);
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            border-radius: 5px;
+        }
+        .info h4 {
+            margin: 0 0 5px;
+            color: #777;
+        }
+
+        .legend {
+            line-height: 18px;
+            color: #555;
+        }
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.7;
+        }
+
+        /* Légende collapsible sur mobile */
+        @media (max-width: 768px) {
+            .legend-toggle {
+                display: block !important;
+                cursor: pointer;
+                background: rgba(255, 255, 255, 0.9);
+                border: none;
+                padding: 8px;
+            }
+
+            .legend-toggle.hidden {
+                display: none !important;
+            }
+
+            .legend-content {
+                display: none;
+            }
+
+            .legend-content.show {
+                display: block;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .legend-toggle {
+                display: none !important;
+            }
+
+            .legend-content {
+                display: block !important;
+            }
+        }
+
+        /* Personnalisation du contrôleur de couches Leaflet */
+        .leaflet-control-layers {
+            font-size: 14px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .leaflet-control-layers:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .leaflet-control-layers-expanded {
+            padding: 10px;
+            min-width: 200px;
+            max-width: 250px;
+            transition: all 0.3s ease;
+        }
+
+        .leaflet-control-layers label {
+            font-weight: normal;
+            margin: 5px 0;
+            display: block;
+            cursor: pointer;
+            padding: 2px 0;
+            transition: background-color 0.2s ease;
+        }
+
+        .leaflet-control-layers label:hover {
+            background-color: rgba(0,0,0,0.05);
+            border-radius: 3px;
+        }
+
+        /* Styles pour les icônes Lucide */
+        .leaflet-control-layers label svg,
+        .leaflet-control-layers label i[data-lucide] {
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+
+        .map-title svg,
+        .map-title i[data-lucide] {
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        /* Animation pour les icônes au hover */
+        .leaflet-control-layers label:hover svg,
+        .leaflet-control-layers label:hover i[data-lucide] {
+            transform: scale(1.1);
+            transition: transform 0.2s ease;
+        }
+
+        .leaflet-control-layers-separator {
+            height: 1px;
+            background-color: #ddd;
+            margin: 8px 0;
+        }
+
+        /* Styles pour mobile */
+        @media (max-width: 768px) {
+            .leaflet-control-layers {
+                cursor: default;
+            }
+
+            .leaflet-control-layers:hover {
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .map-title-control {
+                font-size: 14px;
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="node_modules/leaflet/dist/leaflet.js"></script>
+    <!-- Leaflet MiniMap JS -->
+    <script src="node_modules/leaflet-minimap/dist/Control.MiniMap.min.js"></script>
+    <script src="src/js/icons.js"></script>
+    <script src="src/js/app-simple.js?v=2025.09.19"></script>
+</body>
+</html>
