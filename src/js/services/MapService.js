@@ -14,7 +14,7 @@ class MapService {
             zoom: config.zoom,
             minZoom: config.minZoom,
             maxZoom: config.maxZoom,
-            zoomControl: true
+            zoomControl: false // Désactiver le contrôle par défaut pour le repositionner
         });
 
         this._setupBaseLayers();
@@ -32,7 +32,7 @@ class MapService {
     }
 
     _setDefaultBaseLayer() {
-        this.setBaseLayer('orthophoto');
+        this.setBaseLayer('osm');
     }
 
     setBaseLayer(layerKey) {

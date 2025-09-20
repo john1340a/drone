@@ -7,6 +7,7 @@ tests/
 
 # Documentation de validation
 VALIDATION.md
+CLAUDE.md
 
 # Logs
 npm-debug.log*

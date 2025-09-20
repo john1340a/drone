@@ -11,20 +11,22 @@ class Config {
     static get LAYERS_CONFIG() {
         return {
             baseMaps: {
-                orthophoto: {
-                    name: 'Orthophotos',
-                    url: 'https://wxs.ign.fr/essentiels/geoportail/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/jpeg&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}',
-                    options: {
-                        attribution: '&copy; <a href="https://www.ign.fr/">IGN</a>',
-                        maxZoom: 18
-                    }
-                },
                 osm: {
                     name: 'OpenStreetMap',
                     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                     options: {
                         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                         maxZoom: 18
+                    }
+                },
+                satellite: {
+                    name: 'Satellite',
+                    url: 'https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.{ext}',
+                    options: {
+                        minZoom: 0,
+                        maxZoom: 20,
+                        attribution: '&copy; CNES, Distribution Airbus DS',
+                        ext: 'jpg'
                     }
                 }
             },
@@ -40,11 +42,13 @@ class Config {
                         crs: L.CRS.EPSG4326
                     },
                     wmts: {
-                        url: 'https://wxs.ign.fr/essentiels/geoportail/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/png&LAYER=TRANSPORTS.DRONES.RESTRICTIONS&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}',
+                        url: 'https://data.geopf.fr/wmts?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/png&LAYER=TRANSPORTS.DRONES.RESTRICTIONS&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}',
                         options: {
-                            attribution: '&copy; <a href="https://www.ign.fr/">IGN</a>',
+                            attribution: '&copy; <a href="https://www.ign.fr/">IGN</a> - G&eacute;oplateforme - Restrictions Drones',
                             format: 'image/png',
-                            transparent: true
+                            transparent: true,
+                            opacity: 0.8,
+                            maxZoom: 18
                         }
                     }
                 }

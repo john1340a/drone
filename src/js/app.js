@@ -41,7 +41,12 @@ class App {
 
     _setupGlobalErrorHandling() {
         window.addEventListener('error', (event) => {
-            console.error('Erreur globale:', event.error);
+            // Filtrer les erreurs non critiques du navigateur/extensions
+            if (event.error && event.error.message &&
+                !event.error.message.includes('runtime.lastError') &&
+                !event.error.message.includes('Extension context invalidated')) {
+                console.error('Erreur globale:', event.error);
+            }
         });
 
         window.addEventListener('unhandledrejection', (event) => {
