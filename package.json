@@ -9,8 +9,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "build": "npm run test && npm run lint && echo 'Build successful - Version simplifiée avec gestionnaire natif Leaflet prête'",
-    "lint": "node -c src/js/app-simple.js && echo '✅ Syntaxe JavaScript OK'"
+    "build": "npm run test && npm run lint && echo 'Build successful - Architecture modulaire prête'",
+    "lint": "node -c src/js/app.js && echo '✅ Syntaxe JavaScript OK'"
   },
   "keywords": [
     "drone",
@@ -25,8 +25,7 @@
     "fomantic-ui": "^2.9.3",
     "jquery": "^3.7.1",
     "leaflet": "^1.9.4",
-    "leaflet-minimap": "^3.6.1",
-    "lucide-react": "^0.544.0"
+    "leaflet-minimap": "^3.6.1"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.1.4",
