@@ -139,6 +139,9 @@ class MapController {
 
         // MiniMap
         this._addMiniMapControl();
+
+        // Géolocalisation
+        this._addLocateControl();
     }
 
     _addZoomControl() {
@@ -215,7 +218,7 @@ class MapController {
     }
 
     _addMiniMapControl() {
-        // Créer une couche pour la minimap (OSM par défaut)
+        // Créer une couche OSM pour la minimap
         const miniMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OSM contributors',
             maxZoom: 18
@@ -242,35 +245,57 @@ class MapController {
     _updateMiniMapLayer(newLayer) {
         if (!this.miniMap || !this.currentMiniMapLayer) return;
 
-        // Retirer l'ancienne couche du minimap
-        this.miniMap._miniMap.removeLayer(this.currentMiniMapLayer);
+        try {
+            // Retirer l'ancienne couche du minimap
+            this.miniMap._miniMap.removeLayer(this.currentMiniMapLayer);
 
-        // Créer une nouvelle couche identique pour le minimap basée sur le type de couche
-        const baseMapsConfig = Config.LAYERS_CONFIG.baseMaps;
+            // Créer une nouvelle couche identique pour le minimap basée sur le type de couche
+            const baseMapsConfig = Config.LAYERS_CONFIG.baseMaps;
 
-        if (newLayer._url && newLayer._url.includes('openstreetmap')) {
-            // Couche OpenStreetMap
-            this.currentMiniMapLayer = L.tileLayer(baseMapsConfig.osm.url, {
-                attribution: '&copy; OSM contributors',
-                maxZoom: 18
-            });
-        } else if (newLayer._url && newLayer._url.includes('stadiamaps')) {
-            // Couche Satellite
-            this.currentMiniMapLayer = L.tileLayer(baseMapsConfig.satellite.url, {
-                attribution: '&copy; Stadia Maps',
-                maxZoom: 20,
-                ext: 'jpg'
-            });
-        } else {
-            // Par défaut, utiliser OSM
-            this.currentMiniMapLayer = L.tileLayer(baseMapsConfig.osm.url, {
-                attribution: '&copy; OSM contributors',
-                maxZoom: 18
-            });
+            if (newLayer._url && newLayer._url.includes('stadiamaps')) {
+                // Couche Satellite
+                const satUrl = typeof baseMapsConfig.satellite.url === 'function'
+                    ? baseMapsConfig.satellite.url()
+                    : baseMapsConfig.satellite.url;
+                this.currentMiniMapLayer = L.tileLayer(satUrl, {
+                    attribution: '&copy; Stadia Maps',
+                    maxZoom: 20,
+                    ext: 'jpg'
+                });
+            } else {
+                // Couche OSM par défaut
+                this.currentMiniMapLayer = L.tileLayer(baseMapsConfig.osm.url, {
+                    attribution: '&copy; OSM contributors',
+                    maxZoom: 18
+                });
+            }
+
+            // Ajouter la nouvelle couche au minimap
+            this.miniMap._miniMap.addLayer(this.currentMiniMapLayer);
+        } catch (error) {
+            console.warn('Erreur lors de la mise à jour du minimap:', error);
         }
+    }
 
-        // Ajouter la nouvelle couche au minimap
-        this.miniMap._miniMap.addLayer(this.currentMiniMapLayer);
+    _addLocateControl() {
+        // Contrôle de géolocalisation
+        const locateControl = L.control.locate({
+            position: 'topleft',
+            strings: {
+                title: "Me géolocaliser",
+                popup: "Vous êtes dans un rayon de {distance} {unit} de ce point",
+                outsideMapBoundsMsg: "Vous semblez être en dehors des limites de la carte"
+            },
+            locateOptions: {
+                maxZoom: 16,
+                watch: true,
+                enableHighAccuracy: true,
+                maximumAge: 15000,
+                timeout: 10000
+            }
+        }).addTo(this.mapService.getMap());
+
+        return locateControl;
     }
 
     _initializeLucideIcons() {

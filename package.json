@@ -25,7 +25,8 @@
     "fomantic-ui": "^2.9.3",
     "jquery": "^3.7.1",
     "leaflet": "^1.9.4",
-    "leaflet-minimap": "^3.6.1"
+    "leaflet-minimap": "^3.6.1",
+    "leaflet.locatecontrol": "^0.85.1"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.1.4",

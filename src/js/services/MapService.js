@@ -27,8 +27,15 @@ class MapService {
         const baseMapsConfig = Config.LAYERS_CONFIG.baseMaps;
 
         Object.entries(baseMapsConfig).forEach(([key, config]) => {
-            this.baseLayers[key] = L.tileLayer(config.url, config.options);
+            const url = typeof config.url === 'function' ? config.url() : config.url;
+            this.baseLayers[key] = L.tileLayer(url, config.options);
         });
+    }
+
+    _createFallbackLayer(key, config) {
+        if (config.fallback) {
+            this.baseLayers[key] = L.tileLayer(config.fallback.url, config.fallback.options);
+        }
     }
 
     _setDefaultBaseLayer() {
