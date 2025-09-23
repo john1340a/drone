@@ -9,7 +9,6 @@ class App {
             this._initializeController();
             this._setupGlobalErrorHandling();
 
-            console.log('Application SIG Drone initialisée avec succès');
         } catch (error) {
             console.error('Erreur lors de l\'initialisation de l\'application:', error);
             this._showCriticalError('Erreur critique lors de l\'initialisation de l\'application');

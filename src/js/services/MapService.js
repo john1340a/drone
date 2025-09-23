@@ -14,6 +14,8 @@ class MapService {
             zoom: config.zoom,
             minZoom: config.minZoom,
             maxZoom: config.maxZoom,
+            maxBounds: config.maxBounds,
+            maxBoundsViscosity: config.maxBoundsViscosity,
             zoomControl: false // Désactiver le contrôle par défaut pour le repositionner
         });
 

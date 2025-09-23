@@ -3,8 +3,14 @@ class Config {
         return {
             center: [46.603354, 1.888334], // Centre de la France
             zoom: 6,
-            minZoom: 5,
-            maxZoom: 18
+            minZoom: 6, // Zoom minimum pour éviter les 404 inutiles
+            maxZoom: 18,
+            // Limites géographiques étendues pour inclure tous les DOM-TOM
+            maxBounds: [
+                [-22.0, -63.0], // Sud-Ouest (Nouvelle-Calédonie, Antilles)
+                [51.5, 56.0]     // Nord-Est (limite nord, Guyane/Réunion)
+            ],
+            maxBoundsViscosity: 1.0 // Empêche de sortir complètement des limites
         };
     }
 
@@ -52,6 +58,36 @@ class Config {
                         }
                     }
                 }
+            }
+        };
+    }
+
+    static get DOMTOM_CONFIG() {
+        return {
+            metropole: {
+                name: 'Métropole',
+                center: [46.603354, 1.888334],
+                zoom: 6
+            },
+            antilles: {
+                name: 'Antilles',
+                center: [16.25, -61.583333], // Centré entre Guadeloupe et Martinique
+                zoom: 9
+            },
+            guyane: {
+                name: 'Guyane',
+                center: [3.9339, -53.1258],
+                zoom: 8
+            },
+            reunion: {
+                name: 'Réunion',
+                center: [-21.1151, 55.5364],
+                zoom: 11
+            },
+            mayotte: {
+                name: 'Mayotte',
+                center: [-12.8275, 45.1662],
+                zoom: 11
             }
         };
     }

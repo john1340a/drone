@@ -142,6 +142,9 @@ class MapController {
 
         // Géolocalisation
         this._addLocateControl();
+
+        // Navigation DOM-TOM avec geocoder
+        this._addDomTomGeocoder();
     }
 
     _addZoomControl() {
@@ -382,5 +385,99 @@ class MapController {
 
     fitMapToBounds(bounds) {
         this.mapService.fitBounds(bounds);
+    }
+
+    _addDomTomGeocoder() {
+        const geocoderControl = L.control({position: 'topright'});
+
+        geocoderControl.onAdd = (map) => {
+            const div = L.DomUtil.create('div', 'domtom-geocoder');
+            div.innerHTML = `
+                <div class="custom-select" id="domtom-select">
+                    <div class="select-trigger">
+                        <span class="selected-option">🌍</span>
+                        <i class="dropdown-arrow">▼</i>
+                    </div>
+                    <div class="select-options">
+                        <div class="select-option" data-value="metropole">
+                            <img src="https://flagcdn.com/w40/fr.png" alt="France" class="flag-icon">
+                            <span class="option-text">Métropole</span>
+                        </div>
+                        <div class="select-option" data-value="antilles">
+                            <img src="https://flagcdn.com/w40/mq.png" alt="Martinique" class="flag-icon">
+                            <span class="option-text">Antilles</span>
+                        </div>
+                        <div class="select-option" data-value="guyane">
+                            <img src="https://flagcdn.com/w40/gf.png" alt="Guyane" class="flag-icon">
+                            <span class="option-text">Guyane</span>
+                        </div>
+                        <div class="select-option" data-value="reunion">
+                            <img src="https://flagcdn.com/w40/re.png" alt="Réunion" class="flag-icon">
+                            <span class="option-text">Réunion</span>
+                        </div>
+                        <div class="select-option" data-value="mayotte">
+                            <img src="https://flagcdn.com/w40/yt.png" alt="Mayotte" class="flag-icon">
+                            <span class="option-text">Mayotte</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Empêcher la propagation des événements
+            L.DomEvent.disableClickPropagation(div);
+            L.DomEvent.disableScrollPropagation(div);
+
+            return div;
+        };
+
+        geocoderControl.addTo(this.mapService.getMap());
+
+        // Ajouter l'event listener pour le dropdown personnalisé
+        setTimeout(() => {
+            this._setupCustomSelect();
+        }, 100);
+    }
+
+    _setupCustomSelect() {
+        const customSelect = document.getElementById('domtom-select');
+        const trigger = customSelect.querySelector('.select-trigger');
+        const options = customSelect.querySelector('.select-options');
+        const selectOptions = customSelect.querySelectorAll('.select-option');
+
+        // Toggle dropdown
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            customSelect.classList.toggle('active');
+        });
+
+        // Handle option selection
+        selectOptions.forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const value = option.getAttribute('data-value');
+
+                if (value) {
+                    this.navigateToTerritory(value);
+                }
+
+                // Reset à l'icône globe après navigation
+                trigger.querySelector('.selected-option').textContent = '🌍';
+                customSelect.classList.remove('active');
+            });
+        });
+
+        // Fermer le dropdown en cliquant ailleurs
+        document.addEventListener('click', () => {
+            customSelect.classList.remove('active');
+        });
+    }
+
+    navigateToTerritory(territoryKey) {
+        const territories = Config.DOMTOM_CONFIG;
+        const territory = territories[territoryKey];
+
+        if (territory) {
+            this.mapService.setView(territory.center, territory.zoom);
+        }
     }
 }
