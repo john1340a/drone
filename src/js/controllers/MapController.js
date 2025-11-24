@@ -59,21 +59,24 @@ class MapController {
     }
 
     _setupLayerControl() {
-        // Créer les fonds de carte pour le contrôle natif Leaflet
+        // Créer le sélecteur visuel de fond de carte (topright)
         const baseMapsConfig = Config.LAYERS_CONFIG.baseMaps;
         const baseMaps = {};
 
         Object.entries(baseMapsConfig).forEach(([key, config]) => {
-            baseMaps[config.name] = this.mapService.baseLayers[key];
+            baseMaps[key] = this.mapService.baseLayers[key];
         });
 
-        // Créer les couches overlay
+        this.basemapSwitcher = new BasemapSwitcher(this.mapService, baseMaps);
+        this.basemapSwitcher.createControl().addTo(this.mapService.getMap());
+
+        // Créer un contrôle séparé pour les overlays (topright, en dessous du basemap switcher)
         const overlayMaps = {};
         const droneLayer = this.layerService.getDroneRestrictionsLayer();
-        overlayMaps["🛡️ Restrictions Drones (IGN)"] = droneLayer;
+        overlayMaps["Restrictions Drones (IGN)"] = droneLayer;  // Sans emoji
 
-        // Ajouter le gestionnaire de couches natif Leaflet
-        this.layerControl = L.control.layers(baseMaps, overlayMaps, {
+        // Contrôle Leaflet standard pour les overlays uniquement
+        this.layerControl = L.control.layers(null, overlayMaps, {
             position: 'topright',
             collapsed: true
         }).addTo(this.mapService.getMap());
@@ -81,7 +84,6 @@ class MapController {
         // Configuration du comportement hover pour desktop (avec délai)
         setTimeout(() => {
             this._setupLayerControlHover();
-            this._replaceEmojisWithIcons();
         }, 200);
     }
 
@@ -92,12 +94,10 @@ class MapController {
             // Desktop: hover pour ouvrir/fermer
             controlContainer.addEventListener('mouseenter', () => {
                 try {
-                    // Vérifier si le contrôle est collapsed
                     if (!controlContainer.classList.contains('leaflet-control-layers-expanded')) {
                         this.layerControl.expand();
                     }
                 } catch (error) {
-                    // Fallback silencieux
                     console.debug('Layer control hover expand error:', error);
                 }
             });
@@ -109,7 +109,6 @@ class MapController {
                             this.layerControl.collapse();
                         }
                     } catch (error) {
-                        // Fallback silencieux
                         console.debug('Layer control hover collapse error:', error);
                     }
                 }, 100);
@@ -119,31 +118,6 @@ class MapController {
 
     _isMobileDevice() {
         return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    }
-
-    _replaceEmojisWithIcons() {
-        const layerLabels = document.querySelectorAll('.leaflet-control-layers label span');
-        layerLabels.forEach(label => {
-            let text = label.textContent;
-
-            if (text.includes('🛡️')) {
-                text = text.replace('🛡️', '');
-                const icon = document.createElement('i');
-                icon.setAttribute('data-lucide', 'shield');
-                icon.style.width = '14px';
-                icon.style.height = '14px';
-                icon.style.marginRight = '6px';
-                icon.style.verticalAlign = 'middle';
-                label.insertBefore(icon, label.firstChild);
-            }
-
-            label.lastChild.textContent = text.trim();
-        });
-
-        // Réinitialiser les icônes Lucide
-        if (window.lucide) {
-            lucide.createIcons();
-        }
     }
 
     _setupResponsiveEvents() {

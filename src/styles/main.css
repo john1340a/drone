@@ -599,3 +599,190 @@ body {
         display: block !important;
     }
 }
+
+/* ==========================================================================
+   Fix pour Safari et appareils mobiles - Contrôles Leaflet Bottom
+   ========================================================================== */
+
+/* Style spécifique pour Android (mobile uniquement) */
+body.android .leaflet-bottom {
+    bottom: 1px !important;
+    position: fixed !important;
+    z-index: 1000 !important;
+}
+
+/* Fix pour iOS (iPhone/iPad uniquement) */
+body.ios .leaflet-bottom {
+    bottom: 1px !important;
+    position: fixed !important;
+    z-index: 1000 !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+}
+
+/* Fix général pour tous les navigateurs mobiles */
+@media (max-width: 768px) {
+    .leaflet-bottom {
+        bottom: 1px !important;
+        position: fixed !important;
+        z-index: 1000 !important;
+    }
+}
+
+/* S'assurer que la minimap et les contrôles en bas sont visibles */
+.leaflet-control-minimap,
+.leaflet-bottom .leaflet-control {
+    margin-bottom: 10px !important;
+}
+
+/* Fix pour les appareils avec encoche (iPhone X+) - mobile uniquement */
+@supports (padding: max(0px)) {
+    body.ios .leaflet-bottom,
+    body.android .leaflet-bottom {
+        padding-bottom: max(10px, env(safe-area-inset-bottom)) !important;
+    }
+}
+
+/* ==========================================================================
+   Basemap Switcher - Sélecteur visuel de fond de carte
+   ========================================================================== */
+
+.leaflet-basemap-switcher {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    padding: 8px;
+}
+
+.basemap-switcher-container {
+    min-width: 180px;
+    position: relative;
+}
+
+/* Toggle link (masqué par défaut sur desktop) */
+.basemap-toggle-link {
+    display: none !important;  /* Forcer le masquage sur desktop */
+    width: 36px;
+    height: 36px;
+    background: white;
+    border-radius: 4px;
+    text-decoration: none;
+    position: relative;
+    border: 2px solid rgba(0,0,0,0.2);
+}
+
+.basemap-toggle-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.basemap-options {
+    display: flex;  /* Toujours visible sur desktop */
+    gap: 10px;
+    justify-content: space-between;
+}
+
+.basemap-option {
+    flex: 1;
+    cursor: pointer;
+    border: 3px solid transparent;
+    border-radius: 6px;
+    padding: 4px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.basemap-option:hover {
+    border-color: rgba(33, 133, 208, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.basemap-option.active {
+    border-color: #2185d0;
+    box-shadow: 0 4px 12px rgba(33, 133, 208, 0.3);
+}
+
+.basemap-thumbnail {
+    width: 80px;
+    height: 80px;
+    border-radius: 4px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    margin-bottom: 6px;
+}
+
+/* Miniature OpenStreetMap */
+.osm-thumb {
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjJFRkU5Ii8+CiAgPHBhdGggZD0iTTAgMjBMODAgMjBMODAgMjJMMCAyMlpNMCA0MEw4MCA0MEw4MCA0MkwwIDQyWk0wIDYwTDgwIDYwTDgwIDYyTDAgNjJaIiBmaWxsPSIjRENEQ0RDIi8+CiAgPHBhdGggZD0iTTIwIDBMMjAgODBMMjIgODBMMjIgMFpNNDAgMEw0MCA4MEw0MiA4MEw0MiAwWk02MCAwTDYwIDgwTDYyIDgwTDYyIDBaIiBmaWxsPSIjRENEQ0RDIi8+CiAgPGNpcmNsZSBjeD0iNDAiIGN5PSI0MCIgcj0iMTUiIGZpbGw9IiNGRkRFMDAiIHN0cm9rZT0iIzMzODhGRiIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPHBhdGggZD0iTTI1IDI1TDMwIDI4TDI4IDMzWk01NSAyNUw1MCAyOEw1MiAzM1pNMjUgNTVMMzAgNTJMMjggNDdaTTU1IDU1TDUwIDUyTDUyIDQ3WiIgZmlsbD0iIzVDQjg1QyIvPgo8L3N2Zz4=');
+}
+
+/* Miniature Satellite */
+.satellite-thumb {
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWQxIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6IzRBNkY0QTtzdG9wLW9wYWNpdHk6MSIgLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI1MCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM4QkE4OEI7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6IzZBOEI2QTtzdG9wLW9wYWNpdHk6MSIgLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxyZWN0IHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgZmlsbD0idXJsKCNncmFkMSkiLz4KICA8cGF0aCBkPSJNMCAwTDgwIDgwTDgwIDYwTDAgMFpNODAgMEw4MCAyMEw2MCAwWiIgZmlsbD0iIzVBN0Y1QSIgb3BhY2l0eT0iMC42Ii8+CiAgPHBhdGggZD0iTTAgODBMMCAyMEwyMCA4MFpNMCA2MEwwIDgwTDYwIDgwWiIgZmlsbD0iIzNBNUYzQSIgb3BhY2l0eT0iMC40Ii8+CiAgPGNpcmNsZSBjeD0iMzAiIGN5PSI1MCIgcj0iOCIgZmlsbD0iIzY4ODg2OCIgb3BhY2l0eT0iMC44Ii8+CiAgPGNpcmNsZSBjeD0iNTUiIGN5PSIzMCIgcj0iNSIgZmlsbD0iIzc4OTg3OCIgb3BhY2l0eT0iMC43Ii8+Cjwvc3ZnPg==');
+}
+
+.basemap-label {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    padding: 4px 0;
+}
+
+.basemap-option.active .basemap-label {
+    color: #2185d0;
+    font-weight: 600;
+}
+
+/* Responsive pour mobile */
+@media (max-width: 768px) {
+    .leaflet-basemap-switcher {
+        padding: 4px;
+    }
+
+    .basemap-switcher-container {
+        min-width: auto;
+    }
+
+    /* Afficher le toggle sur mobile */
+    .basemap-toggle-link {
+        display: block !important;  /* Surcharger le display: none du desktop */
+    }
+
+    /* Masquer les options par défaut sur mobile */
+    .basemap-options {
+        display: none;
+        gap: 8px;
+        position: absolute;
+        top: 0;
+        right: 45px;
+        background: white;
+        padding: 8px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        z-index: 1000;
+    }
+
+    /* Afficher les options quand expanded */
+    .basemap-switcher-container.expanded .basemap-options {
+        display: flex;
+    }
+
+    .basemap-thumbnail {
+        width: 60px;
+        height: 60px;
+    }
+
+    .basemap-label {
+        font-size: 11px;
+    }
+}

@@ -4,13 +4,7 @@ class Config {
             center: [46.603354, 1.888334], // Centre de la France
             zoom: 6,
             minZoom: 6, // Zoom minimum pour éviter les 404 inutiles
-            maxZoom: 18,
-            // Limites géographiques étendues pour inclure tous les DOM-TOM
-            maxBounds: [
-                [-22.0, -63.0], // Sud-Ouest (Nouvelle-Calédonie, Antilles)
-                [51.5, 56.0]     // Nord-Est (limite nord, Guyane/Réunion)
-            ],
-            maxBoundsViscosity: 1.0 // Empêche de sortir complètement des limites
+            maxZoom: 21, // Augmenté pour supporter zoom jusqu'à 100m
         };
     }
 
@@ -22,7 +16,8 @@ class Config {
                     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                     options: {
                         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                        maxZoom: 18
+                        maxZoom: 21,        // Permettre zoom jusqu'à 21
+                        maxNativeZoom: 19   // OSM fournit des tuiles jusqu'à 19, oversampling au-delà
                     }
                 },
                 satellite: {
@@ -30,7 +25,8 @@ class Config {
                     url: 'https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.{ext}',
                     options: {
                         minZoom: 0,
-                        maxZoom: 20,
+                        maxZoom: 21,        // Permettre zoom jusqu'à 21
+                        maxNativeZoom: 20,  // Satellite fournit jusqu'à 20, oversampling au-delà
                         attribution: '&copy; CNES, Distribution Airbus DS',
                         ext: 'jpg'
                     }
@@ -39,23 +35,20 @@ class Config {
             dateLayers: {
                 droneRestrictions: {
                     name: 'Restrictions drones',
-                    wms: {
-                        url: 'https://wxs.ign.fr/essentiels/geoportail/r/wms',
-                        layer: 'TRANSPORTS.DRONES.RESTRICTIONS',
-                        format: 'image/png',
+                    // WMTS - URL exactement comme sur geoportail.gouv.fr
+                    url: 'https://data.geopf.fr/wmts?layer=TRANSPORTS.DRONES.RESTRICTIONS&style=normal&tilematrixset=PM&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/png&TileMatrix={z}&TileCol={x}&TileRow={y}',
+                    options: {
+                        attribution: '&copy; <a href="https://www.ign.fr/">IGN</a> - G&eacute;oplateforme - Restrictions Drones',
                         transparent: true,
-                        version: '1.3.0',
-                        crs: L.CRS.EPSG4326
-                    },
-                    wmts: {
-                        url: 'https://data.geopf.fr/wmts?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/png&LAYER=TRANSPORTS.DRONES.RESTRICTIONS&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}',
-                        options: {
-                            attribution: '&copy; <a href="https://www.ign.fr/">IGN</a> - G&eacute;oplateforme - Restrictions Drones',
-                            format: 'image/png',
-                            transparent: true,
-                            opacity: 0.8,
-                            maxZoom: 18
-                        }
+                        opacity: 0.8,
+                        minZoom: 0,
+                        maxZoom: 21,        // Zoom jusqu'à 21 (≈5m)
+                        maxNativeZoom: 17,  // Fige les tuiles du niveau 17 (≈300m) et les étire pour zoom supérieur
+                        tileSize: 256,
+                        updateWhenIdle: false,
+                        updateWhenZooming: true,
+                        keepBuffer: 4,
+                        pane: 'overlayPane'  // Afficher au-dessus des basemaps
                     }
                 }
             }
@@ -71,8 +64,8 @@ class Config {
             },
             antilles: {
                 name: 'Antilles',
-                center: [16.25, -61.583333], // Centré entre Guadeloupe et Martinique
-                zoom: 9
+                center: [16.28, -61.31],
+                zoom: 8  // Zoom réduit pour voir toute l'emprise
             },
             guyane: {
                 name: 'Guyane',

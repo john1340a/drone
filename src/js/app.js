@@ -6,6 +6,7 @@ class App {
 
     init() {
         try {
+            this._detectBrowserAndPlatform();
             this._validateDependencies();
             this._initializeAnalytics();
             this._initializeController();
@@ -19,6 +20,31 @@ class App {
             if (this.analyticsService) {
                 this.analyticsService.trackError(error, 'App initialization');
             }
+        }
+    }
+
+    _detectBrowserAndPlatform() {
+        const userAgent = navigator.userAgent.toLowerCase();
+        const body = document.body;
+
+        // Détection iOS
+        if (/iphone|ipad|ipod/.test(userAgent)) {
+            body.classList.add('ios');
+        }
+
+        // Détection Android
+        if (/android/.test(userAgent)) {
+            body.classList.add('android');
+        }
+
+        // Détection Safari (mais pas Chrome sur iOS)
+        if (/safari/.test(userAgent) && !/chrome/.test(userAgent)) {
+            body.classList.add('safari');
+        }
+
+        // Détection mobile générale
+        if (/mobile/.test(userAgent)) {
+            body.classList.add('mobile');
         }
     }
 

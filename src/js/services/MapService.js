@@ -19,6 +19,10 @@ class MapService {
             zoomControl: false // Désactiver le contrôle par défaut pour le repositionner
         });
 
+        // Créer un pane personnalisé pour les overlays (au-dessus des basemaps)
+        this.map.createPane('overlayPane');
+        this.map.getPane('overlayPane').style.zIndex = 450; // Au-dessus des tile layers (zIndex 200)
+
         this._setupBaseLayers();
         this._setDefaultBaseLayer();
 

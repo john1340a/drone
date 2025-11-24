@@ -3,21 +3,6 @@ class LayerService {
         this.layers = {};
     }
 
-    createWMSLayer(config) {
-        return L.tileLayer.wms(config.url, {
-            layers: config.layer,
-            format: config.format,
-            transparent: config.transparent,
-            version: config.version,
-            crs: config.crs || L.CRS.EPSG3857,
-            attribution: config.attribution || ''
-        });
-    }
-
-    createWMTSLayer(config) {
-        return L.tileLayer(config.url, config.options);
-    }
-
     createGeoJSONLayer(data, options = {}) {
         const defaultOptions = {
             style: this._getDefaultStyle(),
@@ -53,7 +38,8 @@ class LayerService {
     getDroneRestrictionsLayer() {
         const config = Config.LAYERS_CONFIG.dateLayers.droneRestrictions;
 
-        return this.createWMTSLayer(config.wmts);
+        // Créer une TileLayer directe avec l'URL WMTS IGN
+        return L.tileLayer(config.url, config.options);
     }
 
     async loadGeoJSONFromFile(filePath) {
