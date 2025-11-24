@@ -1,18 +1,41 @@
 class App {
     constructor() {
         this.mapController = null;
+        this.analyticsService = null;
     }
 
     init() {
         try {
             this._validateDependencies();
+            this._initializeAnalytics();
             this._initializeController();
             this._setupGlobalErrorHandling();
 
         } catch (error) {
             console.error('Erreur lors de l\'initialisation de l\'application:', error);
             this._showCriticalError('Erreur critique lors de l\'initialisation de l\'application');
+
+            // Track l'erreur si analytics disponible
+            if (this.analyticsService) {
+                this.analyticsService.trackError(error, 'App initialization');
+            }
         }
+    }
+
+    _initializeAnalytics() {
+        this.analyticsService = new AnalyticsService();
+        this.analyticsService.trackPageLoad();
+        this.analyticsService.initSessionTracking();
+
+        // Track les performances après chargement complet
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                this.analyticsService.trackPerformance();
+            }, 1000);
+        });
+
+        // Rendre le service accessible globalement
+        window.analyticsService = this.analyticsService;
     }
 
     _validateDependencies() {
@@ -45,11 +68,22 @@ class App {
                 !event.error.message.includes('runtime.lastError') &&
                 !event.error.message.includes('Extension context invalidated')) {
                 console.error('Erreur globale:', event.error);
+
+                // Track l'erreur
+                if (this.analyticsService) {
+                    this.analyticsService.trackError(event.error, 'Global error');
+                }
             }
         });
 
         window.addEventListener('unhandledrejection', (event) => {
             console.error('Promise rejetée non gérée:', event.reason);
+
+            // Track l'erreur de promise
+            if (this.analyticsService) {
+                const error = new Error(event.reason);
+                this.analyticsService.trackError(error, 'Unhandled promise rejection');
+            }
         });
     }
 

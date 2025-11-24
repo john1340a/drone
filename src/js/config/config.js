@@ -107,4 +107,21 @@ class Config {
             }
         };
     }
+
+    static get ANALYTICS_CONFIG() {
+        return {
+            // Remplacer 'GA_MEASUREMENT_ID' par votre vrai ID Google Analytics 4
+            // Format: G-XXXXXXXXXX
+            measurementId: 'G-CEX7EHSHQ4',
+            enabled: true,
+            // Événements à tracker
+            events: {
+                mapInteraction: true,
+                layerToggle: true,
+                regionChange: true,
+                search: true,
+                error: true
+            }
+        };
+    }
 }

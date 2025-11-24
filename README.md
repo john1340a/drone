@@ -67,19 +67,24 @@ drone/
 ├── src/
 │   ├── js/
 │   │   ├── config/
-│   │   │   └── config.js          # Configuration de l'application
+│   │   │   └── config.js              # Configuration de l'application
 │   │   ├── services/
-│   │   │   ├── MapService.js      # Service de gestion de la carte
-│   │   │   └── LayerService.js    # Service de gestion des couches
+│   │   │   ├── MapService.js          # Service de gestion de la carte
+│   │   │   ├── LayerService.js        # Service de gestion des couches
+│   │   │   └── AnalyticsService.js    # Service Google Analytics 4
 │   │   ├── controllers/
-│   │   │   └── MapController.js   # Contrôleur principal
-│   │   └── app.js                 # Point d'entrée de l'application
+│   │   │   └── MapController.js       # Contrôleur principal
+│   │   └── app.js                     # Point d'entrée de l'application
 │   ├── styles/
-│   │   └── main.css               # Styles CSS personnalisés
-│   └── data/                      # Fichiers GeoJSON (futur)
-├── index.html                     # Page principale
-├── package.json                   # Configuration NPM
-└── README.md                      # Documentation
+│   │   └── main.css                   # Styles CSS personnalisés
+│   └── data/                          # Fichiers GeoJSON (futur)
+├── index.html                         # Page principale (dev avec node_modules)
+├── index-gh-pages.html                # Page pour GitHub Pages (avec CDN)
+├── deploy.sh / deploy.ps1             # Scripts de déploiement
+├── .nojekyll                          # Désactive Jekyll sur GitHub Pages
+├── DEPLOYMENT.md                      # Guide de déploiement complet
+├── package.json                       # Configuration NPM
+└── README.md                          # Documentation
 ```
 
 ### Principes de conception
@@ -96,7 +101,7 @@ L'application respecte les principes **SOLID** et **Clean Code**:
 
 1. **Couche de présentation**: HTML + CSS + Fomantic UI
 2. **Couche de contrôle**: MapController
-3. **Couche de service**: MapService, LayerService
+3. **Couche de service**: MapService, LayerService, AnalyticsService
 4. **Couche de configuration**: Config
 
 ## Configuration
@@ -154,6 +159,42 @@ L'application est optimisée pour tous les appareils:
 ### Tests
 
 Pour l'instant, les tests sont manuels. L'intégration de tests automatisés est prévue dans une future version.
+
+## 📊 Analytics et Tracking
+
+L'application intègre **Google Analytics 4** pour suivre :
+
+- ✅ Nombre de visiteurs uniques
+- ✅ Pages vues et durée de session
+- ✅ Interactions avec la carte (zoom, déplacement)
+- ✅ Utilisation des couches et fonds de carte
+- ✅ Navigation entre régions (Métropole, DOM-TOM)
+- ✅ Utilisation de la géolocalisation
+- ✅ Erreurs JavaScript
+- ✅ Performances de chargement
+
+**Configuration :** Voir [DEPLOYMENT.md](DEPLOYMENT.md)
+
+## 🚀 Déploiement sur GitHub Pages
+
+Le projet peut être hébergé gratuitement sur GitHub Pages.
+
+### Déploiement rapide
+
+```bash
+# Windows (PowerShell)
+.\deploy.ps1
+
+# Linux/Mac
+chmod +x deploy.sh
+./deploy.sh
+```
+
+### Configuration manuelle
+
+Consultez le guide complet : **[DEPLOYMENT.md](DEPLOYMENT.md)**
+
+Votre site sera accessible à : `https://VOTRE-USERNAME.github.io/drone/`
 
 ## Licence
 

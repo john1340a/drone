@@ -17,8 +17,40 @@ class MapController {
         this._setupUI();
         this._setupTileErrorHandling();
         this._initializeLucideIcons();
+        this._setupAnalyticsTracking();
 
         this.isInitialized = true;
+    }
+
+    _setupAnalyticsTracking() {
+        const map = this.mapService.getMap();
+        const analytics = window.analyticsService;
+
+        if (!analytics) return;
+
+        // Track les zoom
+        map.on('zoomend', () => {
+            const zoom = map.getZoom();
+            const center = map.getCenter();
+            analytics.trackMapInteraction('zoom', {
+                zoom: zoom,
+                center: center
+            });
+        });
+
+        // Track les changements de fond de carte
+        map.on('baselayerchange', (e) => {
+            analytics.trackBaseMapChange(e.name);
+        });
+
+        // Track l'activation/désactivation des overlays
+        map.on('overlayadd', (e) => {
+            analytics.trackLayerToggle(e.name, true);
+        });
+
+        map.on('overlayremove', (e) => {
+            analytics.trackLayerToggle(e.name, false);
+        });
     }
 
     _setupEventListeners() {
@@ -281,6 +313,9 @@ class MapController {
     }
 
     _addLocateControl() {
+        const map = this.mapService.getMap();
+        const analytics = window.analyticsService;
+
         // Contrôle de géolocalisation
         const locateControl = L.control.locate({
             position: 'topleft',
@@ -296,7 +331,18 @@ class MapController {
                 maximumAge: 15000,
                 timeout: 10000
             }
-        }).addTo(this.mapService.getMap());
+        }).addTo(map);
+
+        // Track les événements de géolocalisation
+        if (analytics) {
+            map.on('locationfound', () => {
+                analytics.trackGeolocation(true);
+            });
+
+            map.on('locationerror', () => {
+                analytics.trackGeolocation(false);
+            });
+        }
 
         return locateControl;
     }
@@ -478,6 +524,11 @@ class MapController {
 
         if (territory) {
             this.mapService.setView(territory.center, territory.zoom);
+
+            // Track le changement de région
+            if (window.analyticsService) {
+                window.analyticsService.trackRegionChange(territory.name);
+            }
         }
     }
 }
