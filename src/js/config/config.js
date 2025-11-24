@@ -22,13 +22,12 @@ class Config {
                 },
                 satellite: {
                     name: 'Satellite',
-                    url: 'https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.{ext}',
+                    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
                     options: {
                         minZoom: 0,
                         maxZoom: 21,        // Permettre zoom jusqu'à 21
-                        maxNativeZoom: 20,  // Satellite fournit jusqu'à 20, oversampling au-delà
-                        attribution: '&copy; CNES, Distribution Airbus DS',
-                        ext: 'jpg'
+                        maxNativeZoom: 19,  // Esri World Imagery fournit jusqu'à 19, oversampling au-delà
+                        attribution: '&copy; <a href="https://www.esri.com/">Esri</a>, Maxar, Earthstar Geographics'
                     }
                 }
             },

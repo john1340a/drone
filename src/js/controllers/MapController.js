@@ -261,15 +261,15 @@ class MapController {
             // Créer une nouvelle couche identique pour le minimap basée sur le type de couche
             const baseMapsConfig = Config.LAYERS_CONFIG.baseMaps;
 
-            if (newLayer._url && newLayer._url.includes('stadiamaps')) {
-                // Couche Satellite
+            // Détecter si c'est une couche satellite (Esri World Imagery ou autre)
+            if (newLayer._url && (newLayer._url.includes('arcgisonline.com') || newLayer._url.includes('satellite'))) {
+                // Couche Satellite (Esri World Imagery)
                 const satUrl = typeof baseMapsConfig.satellite.url === 'function'
                     ? baseMapsConfig.satellite.url()
                     : baseMapsConfig.satellite.url;
                 this.currentMiniMapLayer = L.tileLayer(satUrl, {
-                    attribution: '&copy; Stadia Maps',
-                    maxZoom: 20,
-                    ext: 'jpg'
+                    attribution: '&copy; Esri',
+                    maxZoom: 19
                 });
             } else {
                 // Couche OSM par défaut
@@ -290,7 +290,7 @@ class MapController {
         const map = this.mapService.getMap();
         const analytics = window.analyticsService;
 
-        // Contrôle de géolocalisation
+        // Contrôle de géolocalisation avec gestion d'erreur améliorée
         const locateControl = L.control.locate({
             position: 'topleft',
             strings: {
@@ -300,10 +300,33 @@ class MapController {
             },
             locateOptions: {
                 maxZoom: 16,
-                watch: true,
+                watch: false,  // Désactiver le watch sur iOS pour éviter les erreurs
                 enableHighAccuracy: true,
-                maximumAge: 15000,
-                timeout: 10000
+                maximumAge: 30000,  // Augmenté pour iOS
+                timeout: 15000  // Augmenté pour iOS
+            },
+            onLocationError: function(err) {
+                console.warn('Erreur de géolocalisation:', err.message);
+
+                // Gestion spécifique des erreurs iOS
+                let userMessage = '';
+                if (err.code === 1) {
+                    // Permission refusée
+                    userMessage = 'Veuillez autoriser la géolocalisation dans les réglages de votre navigateur';
+                } else if (err.code === 2) {
+                    // Position indisponible
+                    userMessage = 'Position indisponible. Vérifiez votre connexion GPS';
+                } else if (err.code === 3) {
+                    // Timeout
+                    userMessage = 'La géolocalisation prend trop de temps. Réessayez';
+                } else {
+                    userMessage = 'Impossible d\'obtenir votre position';
+                }
+
+                // Afficher un message discret (pas d'alert intrusif)
+                if (console) {
+                    console.info('Géolocalisation:', userMessage);
+                }
             }
         }).addTo(map);
 
@@ -313,8 +336,9 @@ class MapController {
                 analytics.trackGeolocation(true);
             });
 
-            map.on('locationerror', () => {
+            map.on('locationerror', (e) => {
                 analytics.trackGeolocation(false);
+                console.debug('Location error:', e.message);
             });
         }
 

@@ -604,28 +604,39 @@ body {
    Fix pour Safari et appareils mobiles - Contrôles Leaflet Bottom
    ========================================================================== */
 
-/* Style spécifique pour Android (mobile uniquement) */
-body.android .leaflet-bottom {
-    bottom: 1px !important;
-    position: fixed !important;
-    z-index: 1000 !important;
-}
-
-/* Fix pour iOS (iPhone/iPad uniquement) */
-body.ios .leaflet-bottom {
-    bottom: 1px !important;
-    position: fixed !important;
-    z-index: 1000 !important;
-    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
-}
-
 /* Fix général pour tous les navigateurs mobiles */
 @media (max-width: 768px) {
     .leaflet-bottom {
-        bottom: 1px !important;
+        bottom: 10px !important;
         position: fixed !important;
         z-index: 1000 !important;
+        pointer-events: auto !important;
+        touch-action: auto !important;
     }
+
+    /* S'assurer que les contrôles à l'intérieur sont cliquables */
+    .leaflet-bottom .leaflet-control {
+        pointer-events: auto !important;
+        touch-action: auto !important;
+    }
+}
+
+/* Style spécifique pour Android (mobile uniquement) */
+body.android .leaflet-bottom {
+    bottom: 10px !important;
+    position: fixed !important;
+    z-index: 1000 !important;
+}
+
+/* Fix pour iOS/Safari (iPhone/iPad uniquement) */
+body.ios .leaflet-bottom,
+body.safari .leaflet-bottom {
+    bottom: 10px !important;
+    position: fixed !important;
+    z-index: 1000 !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    -webkit-transform: translateZ(0) !important;
+    transform: translateZ(0) !important;
 }
 
 /* S'assurer que la minimap et les contrôles en bas sont visibles */
@@ -636,9 +647,10 @@ body.ios .leaflet-bottom {
 
 /* Fix pour les appareils avec encoche (iPhone X+) - mobile uniquement */
 @supports (padding: max(0px)) {
-    body.ios .leaflet-bottom,
-    body.android .leaflet-bottom {
-        padding-bottom: max(10px, env(safe-area-inset-bottom)) !important;
+    @media (max-width: 768px) {
+        .leaflet-bottom {
+            padding-bottom: max(10px, env(safe-area-inset-bottom)) !important;
+        }
     }
 }
 
