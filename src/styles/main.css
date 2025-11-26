@@ -588,6 +588,19 @@ body {
         height: 16px;
         margin-right: 6px;
     }
+
+    /* Ensure Leaflet attribution is visible on mobile */
+    .leaflet-bottom {
+        bottom: 1px !important;
+        position: fixed !important;
+    }
+
+    .leaflet-control-attribution {
+        font-size: 10px !important;
+        background: rgba(255, 255, 255, 0.9) !important;
+        padding: 2px 5px !important;
+        margin-bottom: 5px !important;
+    }
 }
 
 @media (min-width: 769px) {
@@ -598,23 +611,6 @@ body {
     .legend-content {
         display: block !important;
     }
-}
-
-/* ==========================================================================
-   Fix pour Safari et appareils mobiles - Contrôles Leaflet Bottom
-   ========================================================================== */
-
-/* Leaflet Attribution - Force visibility on mobile */
-.leaflet-bottom {
-    bottom: 1px !important;
-    position: fixed !important;
-}
-
-.leaflet-control-attribution {
-    background: rgba(255, 255, 255, 0.9) !important;
-    font-size: 11px !important;
-    padding: 2px 5px !important;
-    margin-bottom: 5px !important;
 }
 
 /* ==========================================================================
