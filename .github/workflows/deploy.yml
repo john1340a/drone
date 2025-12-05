@@ -21,54 +21,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Create env.js with secrets
+      - name: Prepare deployment directory
         run: |
-          cat > src/js/config/env.js << 'EOF'
-          // Configuration des variables d'environnement
-          // Ce fichier est généré automatiquement par GitHub Actions
+          mkdir -p _site
+          # Copier le code source
+          rsync -av --exclude='.git' --exclude='node_modules' --exclude='_site' ./ _site/
 
+          # Nettoyage .gitignore pour être sûr
+          rm -f _site/.gitignore
+
+      - name: Create env.js directly in _site
+        run: |
+          # S'assurer que le dossier existe
+          mkdir -p _site/src/js/config
+
+          # Créer le fichier directement dans le dossier de déploiement
+          cat > _site/src/js/config/env.js << 'EOF'
+          // Configuration des variables d'environnement
           class Env {
               static getGAMeasurementId() {
                   return '${{ secrets.VITE_GA_MEASUREMENT_ID }}';
               }
           }
           EOF
-          echo "✅ env.js créé avec succès"
-          cat src/js/config/env.js
 
-      - name: Create .nojekyll
-        run: touch .nojekyll
-
-      - name: Verify files before upload
-        run: |
-          echo "📁 Fichiers à déployer:"
-          ls -la
-          echo ""
-          echo "📂 Contenu de src/js/config/:"
-          ls -la src/js/config/
-          echo ""
-          echo "📄 Contenu de env.js:"
-          cat src/js/config/env.js || echo "❌ env.js non trouvé!"
-
-      - name: Prepare deployment directory
-        run: |
-          # IMPORTANT: Modifier .gitignore pour ne plus ignorer env.js (pour upload-pages-artifact)
-          # IMPORTANT: Supprimer le .gitignore racine AVANT de copier
-          # Cela garantit qu'aucune règle d'exclusion ne soit copiée ou respectée par erreur
-          rm -f .gitignore
-
-          # Créer un répertoire temporaire pour le déploiement
-          mkdir -p _site
-          # Copier tous les fichiers sauf ceux dans .git et node_modules
-          rsync -av --exclude='.git' --exclude='node_modules' --exclude='tests' --exclude='_site' ./ _site/
-
-          # IMPORTANT: Supprimer aussi le .gitignore copié dans _site
-          rm -f _site/.gitignore
-
-          # Vérifier que env.js est bien copié
-          echo "✅ Vérification de env.js dans _site:"
+          echo "✅ env.js créé directement dans _site"
           ls -la _site/src/js/config/
           cat _site/src/js/config/env.js
+
+      - name: Create .nojekyll in _site
+        run: touch _site/.nojekyll
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
