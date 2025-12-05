@@ -59,6 +59,10 @@ jobs:
           mkdir -p _site
           # Copier tous les fichiers sauf ceux dans .git et node_modules
           rsync -av --exclude='.git' --exclude='node_modules' --exclude='tests' --exclude='_site' ./ _site/
+
+          # IMPORTANT: Supprimer .gitignore pour que upload-pages-artifact n'ignore PAS env.js
+          rm -f _site/.gitignore
+
           # Vérifier que env.js est bien copié
           echo "✅ Vérification de env.js dans _site:"
           ls -la _site/src/js/config/
@@ -70,7 +74,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '_site'
+          path: "_site"
 
       - name: Deploy to GitHub Pages
         id: deployment
