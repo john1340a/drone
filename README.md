@@ -173,28 +173,7 @@ L'application intègre **Google Analytics 4** pour suivre :
 - ✅ Erreurs JavaScript
 - ✅ Performances de chargement
 
-**Configuration :** Voir [DEPLOYMENT.md](DEPLOYMENT.md)
-
-## 🚀 Déploiement sur GitHub Pages
-
-Le projet peut être hébergé gratuitement sur GitHub Pages.
-
-### Déploiement rapide
-
-```bash
-# Windows (PowerShell)
-.\deploy.ps1
-
-# Linux/Mac
-chmod +x deploy.sh
-./deploy.sh
-```
-
-### Configuration manuelle
-
-Consultez le guide complet : **[DEPLOYMENT.md](DEPLOYMENT.md)**
-
-Votre site sera accessible à : `https://VOTRE-USERNAME.github.io/drone/`
+**Configuration sécurisée :** Voir [SECURITY.md](SECURITY.md) pour configurer Google Analytics avec GitHub Secrets
 
 ## Licence
 

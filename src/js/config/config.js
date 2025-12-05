@@ -101,11 +101,12 @@ class Config {
     }
 
     static get ANALYTICS_CONFIG() {
+        // Récupérer l'ID depuis le fichier env.js (géré par GitHub Actions en production)
+        const measurementId = typeof Env !== 'undefined' ? Env.getGAMeasurementId() : '';
+
         return {
-            // Remplacer 'GA_MEASUREMENT_ID' par votre vrai ID Google Analytics 4
-            // Format: G-XXXXXXXXXX
-            measurementId: 'G-CEX7EHSHQ4',
-            enabled: true,
+            measurementId: measurementId,
+            enabled: !!measurementId && measurementId !== '',
             // Événements à tracker
             events: {
                 mapInteraction: true,

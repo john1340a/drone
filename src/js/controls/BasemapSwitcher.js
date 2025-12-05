@@ -44,12 +44,12 @@ class BasemapSwitcher {
                 <div class="basemap-options">
                     <div class="basemap-option ${this.currentBasemap === 'osm' ? 'active' : ''}"
                          data-basemap="osm">
-                        <div class="basemap-thumbnail osm-thumb"></div>
-                        <div class="basemap-label">Plan</div>
+                        <img src="src/assets/images/osm.png" alt="OSM" class="basemap-thumbnail" />
+                        <div class="basemap-label">OSM</div>
                     </div>
                     <div class="basemap-option ${this.currentBasemap === 'satellite' ? 'active' : ''}"
                          data-basemap="satellite">
-                        <div class="basemap-thumbnail satellite-thumb"></div>
+                        <img src="src/assets/images/satellite.png" alt="Satellite" class="basemap-thumbnail" />
                         <div class="basemap-label">Satellite</div>
                     </div>
                 </div>
