@@ -39,9 +39,28 @@ jobs:
               }
           }
           EOF
+          echo "✅ env.js créé avec succès"
+          cat src/js/config/env.js
+
+      - name: Create .nojekyll
+        run: touch .nojekyll
 
       - name: Build
         run: npm run build
+
+      - name: Verify files before upload
+        run: |
+          echo "📁 Fichiers à déployer:"
+          ls -la
+          echo ""
+          echo "📂 Contenu de src/js/config/:"
+          ls -la src/js/config/
+          echo ""
+          echo "📄 Contenu de env.js:"
+          cat src/js/config/env.js || echo "❌ env.js non trouvé!"
+          echo ""
+          echo "🔍 Recherche de tous les fichiers .js dans config:"
+          find src/js/config -name "*.js" -type f
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
