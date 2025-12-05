@@ -49,18 +49,18 @@ jobs:
           echo ""
           echo "📄 Contenu de env.js:"
           cat src/js/config/env.js || echo "❌ env.js non trouvé!"
-          echo ""
-          echo "🔍 Recherche de tous les fichiers .js dans config:"
-          find src/js/config -name "*.js" -type f
 
       - name: Prepare deployment directory
         run: |
+          # IMPORTANT: Modifier .gitignore pour ne plus ignorer env.js (pour upload-pages-artifact)
+          sed -i '/config\/env.js/d' .gitignore
+
           # Créer un répertoire temporaire pour le déploiement
           mkdir -p _site
           # Copier tous les fichiers sauf ceux dans .git et node_modules
           rsync -av --exclude='.git' --exclude='node_modules' --exclude='tests' --exclude='_site' ./ _site/
 
-          # IMPORTANT: Supprimer .gitignore pour que upload-pages-artifact n'ignore PAS env.js
+          # IMPORTANT: Supprimer aussi le .gitignore copié dans _site
           rm -f _site/.gitignore
 
           # Vérifier que env.js est bien copié
