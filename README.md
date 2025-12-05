@@ -160,21 +160,6 @@ L'application est optimisée pour tous les appareils:
 
 Pour l'instant, les tests sont manuels. L'intégration de tests automatisés est prévue dans une future version.
 
-## 📊 Analytics et Tracking
-
-L'application intègre **Google Analytics 4** pour suivre :
-
-- ✅ Nombre de visiteurs uniques
-- ✅ Pages vues et durée de session
-- ✅ Interactions avec la carte (zoom, déplacement)
-- ✅ Utilisation des couches et fonds de carte
-- ✅ Navigation entre régions (Métropole, DOM-TOM)
-- ✅ Utilisation de la géolocalisation
-- ✅ Erreurs JavaScript
-- ✅ Performances de chargement
-
-**Configuration sécurisée :** Voir [SECURITY.md](SECURITY.md) pour configurer Google Analytics avec GitHub Secrets
-
 ## Licence
 
 MIT License - Voir le fichier LICENSE pour plus de détails.

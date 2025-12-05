@@ -53,6 +53,14 @@ jobs:
           echo "🔍 Recherche de tous les fichiers .js dans config:"
           find src/js/config -name "*.js" -type f
 
+      - name: Remove env.js from gitignore for upload
+        run: |
+          # Retirer temporairement env.js du .gitignore pour permettre l'upload
+          sed -i '/src\/js\/config\/env.js/d' .gitignore
+          echo "✅ env.js retiré du .gitignore"
+          echo "📄 Nouveau .gitignore:"
+          cat .gitignore
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
