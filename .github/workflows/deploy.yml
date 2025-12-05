@@ -53,7 +53,9 @@ jobs:
       - name: Prepare deployment directory
         run: |
           # IMPORTANT: Modifier .gitignore pour ne plus ignorer env.js (pour upload-pages-artifact)
-          sed -i '/config\/env.js/d' .gitignore
+          # IMPORTANT: Supprimer le .gitignore racine AVANT de copier
+          # Cela garantit qu'aucune règle d'exclusion ne soit copiée ou respectée par erreur
+          rm -f .gitignore
 
           # Créer un répertoire temporaire pour le déploiement
           mkdir -p _site
@@ -75,6 +77,11 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: "_site"
+
+      - name: Debug Artifact
+        run: |
+          echo "Debug: Listing directory structure of _site"
+          find _site -type f
 
       - name: Deploy to GitHub Pages
         id: deployment
