@@ -53,13 +53,16 @@ jobs:
           echo "🔍 Recherche de tous les fichiers .js dans config:"
           find src/js/config -name "*.js" -type f
 
-      - name: Remove env.js from gitignore for upload
+      - name: Prepare deployment directory
         run: |
-          # Retirer temporairement env.js du .gitignore pour permettre l'upload
-          sed -i '/src\/js\/config\/env.js/d' .gitignore
-          echo "✅ env.js retiré du .gitignore"
-          echo "📄 Nouveau .gitignore:"
-          cat .gitignore
+          # Créer un répertoire temporaire pour le déploiement
+          mkdir -p _site
+          # Copier tous les fichiers sauf ceux dans .git et node_modules
+          rsync -av --exclude='.git' --exclude='node_modules' --exclude='tests' --exclude='_site' ./ _site/
+          # Vérifier que env.js est bien copié
+          echo "✅ Vérification de env.js dans _site:"
+          ls -la _site/src/js/config/
+          cat _site/src/js/config/env.js
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -67,7 +70,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: '_site'
 
       - name: Deploy to GitHub Pages
         id: deployment
