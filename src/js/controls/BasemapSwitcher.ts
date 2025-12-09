@@ -7,6 +7,9 @@ declare global {
     }
 }
 
+import osmImage from '../../assets/images/osm.png';
+import satelliteImage from '../../assets/images/satellite.png';
+
 export default class BasemapSwitcher {
     private mapService: MapService;
     private baseMaps: Record<string, L.TileLayer>;
@@ -60,12 +63,12 @@ export default class BasemapSwitcher {
                 <div class="basemap-options">
                     <div class="basemap-option ${this.currentBasemap === 'osm' ? 'active' : ''}"
                          data-basemap="osm">
-                        <img src="src/assets/images/osm.png" alt="OSM" class="basemap-thumbnail" />
+                        <img src="${osmImage}" alt="OSM" class="basemap-thumbnail" />
                         <div class="basemap-label">OSM</div>
                     </div>
                     <div class="basemap-option ${this.currentBasemap === 'satellite' ? 'active' : ''}"
                          data-basemap="satellite">
-                        <img src="src/assets/images/satellite.png" alt="Satellite" class="basemap-thumbnail" />
+                        <img src="${satelliteImage}" alt="Satellite" class="basemap-thumbnail" />
                         <div class="basemap-label">Satellite</div>
                     </div>
                 </div>

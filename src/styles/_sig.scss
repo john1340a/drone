@@ -1,0 +1,296 @@
+@use 'variables' as *;
+
+/* === Styles spécifiques SIG Restrictions Drone === */
+
+/* Titre sous forme de contrôle Leaflet */
+.map-title-control {
+    background: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    border: 2px solid rgba(0,0,0,0.2);
+}
+
+/* Légende Leaflet native */
+.info {
+    padding: 6px 8px;
+    font: 14px/16px Arial, Helvetica, sans-serif;
+    background: white;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    border-radius: 5px;
+
+    h4 {
+        margin: 0 0 5px;
+        color: #777;
+    }
+}
+
+.legend {
+    line-height: 18px;
+    color: #555;
+
+    i {
+        width: 18px;
+        height: 18px;
+        float: left;
+        margin-right: 8px;
+        opacity: 0.7;
+    }
+}
+
+/* Personnalisation du contrôleur de couches Leaflet */
+.leaflet-control-layers {
+    font-size: 14px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+
+    &:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    label {
+        font-weight: normal;
+        margin: 5px 0;
+        display: block;
+        cursor: pointer;
+        padding: 2px 0;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+            background-color: rgba(0,0,0,0.05);
+            border-radius: 3px;
+        }
+
+        /* Styles pour les icônes Lucide */
+        svg, i[data-lucide] {
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+
+        /* Animation pour les icônes au hover */
+        &:hover svg, &:hover i[data-lucide] {
+            transform: scale(1.1);
+            transition: transform 0.2s ease;
+        }
+    }
+}
+
+.leaflet-control-layers-expanded {
+    padding: 10px;
+    min-width: 200px;
+    max-width: 250px;
+    transition: all 0.3s ease;
+}
+
+.leaflet-control-layers-separator {
+    height: 1px;
+    background-color: #ddd;
+    margin: 8px 0;
+}
+
+.map-title svg,
+.map-title i[data-lucide] {
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
+/* Geocoder DOM-TOM - Dropdown personnalisé */
+.domtom-geocoder {
+    background: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    border: 2px solid rgba(0,0,0,0.2);
+    margin-bottom: 8px;
+    padding: 4px;
+}
+
+.custom-select {
+    position: relative;
+    display: inline-block;
+
+    &.active {
+        .select-trigger {
+            background-color: rgba(33, 133, 208, 0.05);
+            box-shadow: 0 0 3px rgba(33, 133, 208, 0.3);
+            width: 180px;
+            text-align: left;
+            padding: 8px 12px;
+            justify-content: space-between;
+
+            .dropdown-arrow {
+                display: inline;
+            }
+        }
+
+        .select-options {
+            display: block;
+        }
+    }
+}
+
+.select-trigger {
+    background: white;
+    border: none;
+    padding: 8px 4px;
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+    width: 44px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+    text-align: center;
+    overflow: hidden;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+
+    &:hover {
+        background-color: rgba(0,0,0,0.05);
+        width: 180px;
+        text-align: left;
+        padding: 8px 12px;
+        justify-content: space-between;
+
+        .dropdown-arrow {
+            display: inline;
+        }
+    }
+}
+
+.dropdown-arrow {
+    font-size: 10px;
+    color: #666;
+    display: none;
+}
+
+.select-options {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    z-index: 1000;
+    display: none;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.select-option {
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+        background-color: rgba(33, 133, 208, 0.05);
+    }
+
+    .flag-icon {
+        width: 20px;
+        height: 20px;
+        margin-right: 8px;
+        display: inline-block;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+}
+
+.option-text {
+    white-space: nowrap;
+}
+
+/* Basemap Switcher */
+.leaflet-basemap-switcher {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    padding: 8px;
+}
+
+.basemap-switcher-container {
+    min-width: 180px;
+    position: relative;
+}
+
+.basemap-toggle-link {
+    display: none !important;
+    width: 36px;
+    height: 36px;
+    background: white;
+    border-radius: 4px;
+    text-decoration: none;
+    position: relative;
+    border: 2px solid rgba(0,0,0,0.2);
+}
+
+.basemap-toggle-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.basemap-options {
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+}
+
+.basemap-option {
+    flex: 1;
+    cursor: pointer;
+    border: 3px solid transparent;
+    border-radius: 6px;
+    padding: 4px;
+    transition: all 0.3s ease;
+    background: white;
+
+    &:hover {
+        border-color: rgba(33, 133, 208, 0.5);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    &.active {
+        border-color: #2185d0;
+        box-shadow: 0 4px 12px rgba(33, 133, 208, 0.3);
+
+        .basemap-label {
+            color: #2185d0;
+            font-weight: 600;
+        }
+    }
+}
+
+.basemap-thumbnail {
+    width: 80px;
+    height: 80px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    object-fit: cover;
+    display: block;
+}
+
+.basemap-label {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    padding: 4px 0;
+}

@@ -1,0 +1,75 @@
+@use 'variables' as *;
+
+/* === Contrôles de la carte === */
+.leaflet-control-container {
+    font-family: inherit;
+}
+
+.leaflet-popup-content-wrapper {
+    border-radius: $border-radius;
+    box-shadow: $box-shadow;
+}
+
+.leaflet-popup-content {
+    margin: 0.75rem;
+    line-height: 1.4;
+}
+
+/* === Légende === */
+#legend-content {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: $border-radius;
+    border: 1px solid #e0e0e0;
+
+    .ui.list .item {
+        display: flex;
+        align-items: center;
+        padding: 0.25rem 0;
+    }
+}
+
+/* === Boutons === */
+.ui.button {
+    border-radius: $border-radius;
+    transition: all 0.2s ease;
+
+    &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+}
+
+/* === Sidebar mobile === */
+#mobile-sidebar {
+    background-color: rgba(0,0,0,0.9) !important;
+
+    .item {
+        color: white !important;
+    }
+}
+
+/* === Messages et notifications === */
+.ui.message {
+    border-radius: $border-radius;
+    box-shadow: $box-shadow;
+}
+
+.ui.negative.message {
+    background-color: #fff6f6;
+    border: 1px solid #e0b4b4;
+    color: $error-color;
+}
+
+.ui.positive.message {
+    background-color: #fcfff5;
+    border: 1px solid #a3c293;
+    color: $success-color;
+}
+
+/* === Accessibilité === */
+.ui.button:focus,
+.ui.checkbox input:focus ~ label::before {
+    outline: 2px solid $primary-color;
+    outline-offset: 2px;
+}

@@ -1,0 +1,143 @@
+@use 'variables' as *;
+
+/* === Reset et base === */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* === Layout principal === */
+.ui.grid {
+    margin: 0 !important;
+    height: 100vh;
+    overflow: hidden;
+
+    > .column {
+        padding: 0 !important;
+    }
+}
+
+/* === Header === */
+.ui.secondary.menu {
+    background-color: white;
+    border-bottom: 1px solid #e0e0e0;
+    box-shadow: $box-shadow;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    height: $header-height;
+    align-items: center;
+
+    .item {
+        padding: 0 1rem;
+    }
+
+    .header {
+        margin: 0;
+    }
+
+    .right.menu {
+        margin-left: auto;
+    }
+}
+
+/* === Sidebar === */
+#sidebar {
+    background-color: white;
+    border-right: 1px solid #e0e0e0;
+    box-shadow: $box-shadow;
+    height: calc(100vh - #{$header-height});
+    overflow-y: auto;
+    padding: 1rem !important;
+    width: $sidebar-width;
+
+    .ui.segment {
+        border: none;
+        box-shadow: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .ui.accordion {
+        margin-bottom: 2rem;
+
+        .title {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: $border-radius;
+            margin-bottom: 0.5rem;
+        }
+
+        .content {
+            padding: 1rem;
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            border-radius: $border-radius;
+            margin-bottom: 1rem;
+        }
+    }
+
+    .ui.list .item {
+        padding: 0.5rem 0;
+    }
+}
+
+/* === Carte === */
+#map-container {
+    height: calc(100vh - #{$header-height});
+    position: relative;
+}
+
+#map {
+    width: 100%;
+    height: 100vh;
+    background-color: #f0f0f0;
+    // Performance
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+/* === États de chargement === */
+.loading {
+    position: relative;
+    pointer-events: none;
+
+    &::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        margin: -10px 0 0 -10px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid $primary-color;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ui.segment,
+.ui.message {
+    animation: fadeIn 0.3s ease-out;
+}

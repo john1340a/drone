@@ -4,7 +4,8 @@ Application web SIG responsive pour visualiser les zones de restriction de vol d
 
 ## Stack Technique
 
-- **Frontend**: HTML5, CSS3, JavaScript Natif
+- **Frontend**: HTML5, CSS3, TypeScript
+- **Bundler**: Vite
 - **Cartographie**: Leaflet
 - **UI Framework**: Fomantic UI
 - **Gestionnaire de packages**: NPM
@@ -12,32 +13,34 @@ Application web SIG responsive pour visualiser les zones de restriction de vol d
 
 ## Fonctionnalités
 
-### ✅ Fonctionnalités Implémentées
+### Fonctionnalités Implémentées
 
-- 🗺️ **Carte interactive** avec support du zoom et pan
-- 🖼️ **Fonds de carte multiples**:
+- Carte interactive avec support du zoom et pan
+- Fonds de carte multiples:
   - Orthophotos IGN (par défaut)
   - OpenStreetMap
-- 🎯 **Couches de données**:
+  - Satellite (Esri/Maxar)
+- Couches de données:
   - Zones de restrictions drones (IGN TRANSPORTS.DRONES.RESTRICTIONS)
-- 🎛️ **Gestionnaire de couches** pour activer/désactiver les couches
-- 📱 **Design responsive** (desktop, tablet, mobile)
-- 🎨 **Interface utilisateur moderne** avec Fomantic UI
-- ⚡ **Optimisations de performance**
+- Gestionnaire de couches pour activer/désactiver les couches
+- Design responsive (desktop, tablet, mobile)
+- Interface utilisateur moderne avec Fomantic UI
+- Optimisations de performance (Vite, Lazy Loading)
+- Intégration Google Analytics 4
 
-### 🔮 Fonctionnalités Futures
+### Fonctionnalités Futures
 
-- 📊 Support PostgreSQL/PostGIS
-- 📁 Import de fichiers GeoJSON personnalisés
-- 🔍 Recherche géographique
-- 📍 Géolocalisation utilisateur
-- 💾 Sauvegarde des préférences utilisateur
+- Support PostgreSQL/PostGIS
+- Import de fichiers GeoJSON personnalisés
+- Recherche géographique
+- Géolocalisation utilisateur
+- Sauvegarde des préférences utilisateur
 
 ## Installation
 
 ### Prérequis
 
-- Node.js (version 14 ou supérieure)
+- Node.js (version 18 ou supérieure recommandée)
 - NPM
 
 ### Installation des dépendances
@@ -52,11 +55,23 @@ npm install
 # Mode développement avec rechargement automatique
 npm run dev
 
-# Mode production
-npm start
+# Construction pour la production
+npm run build
+
+# Prévisualisation du build de production
+npm run preview
 ```
 
-L'application sera accessible à l'adresse: `http://localhost:8080`
+L'application sera accessible (par défaut) à l'adresse: `http://localhost:3000`
+
+## Déploiement
+
+Le déploiement est automatisé via GitHub Actions vers GitHub Pages.
+
+**Configuration requise sur GitHub:**
+
+1. **Secrets**: Ajouter `VITE_GA_MEASUREMENT_ID` dans Settings > Secrets and variables > Actions.
+2. **Pages**: Configurer la source sur "GitHub Actions" dans Settings > Pages.
 
 ## Architecture
 
@@ -67,22 +82,26 @@ drone/
 ├── src/
 │   ├── js/
 │   │   ├── config/
-│   │   │   └── config.js              # Configuration de l'application
+│   │   │   └── config.ts              # Configuration de l'application
 │   │   ├── services/
-│   │   │   ├── MapService.js          # Service de gestion de la carte
-│   │   │   ├── LayerService.js        # Service de gestion des couches
-│   │   │   └── AnalyticsService.js    # Service Google Analytics 4
+│   │   │   ├── MapService.ts          # Service de gestion de la carte
+│   │   │   ├── LayerService.ts        # Service de gestion des couches
+│   │   │   └── AnalyticsService.ts    # Service Google Analytics 4
 │   │   ├── controllers/
-│   │   │   └── MapController.js       # Contrôleur principal
-│   │   └── app.js                     # Point d'entrée de l'application
+│   │   │   └── MapController.ts       # Contrôleur principal
+│   │   ├── controls/
+│   │   │   └── BasemapSwitcher.ts     # Contrôle de changement de fond de carte
+│   │   ├── leaflet-setup.ts           # Configuration globale Leaflet
+│   │   ├── icons.ts                   # Gestion des icônes
+│   │   └── app.ts                     # Point d'entrée de l'application
 │   ├── styles/
 │   │   └── main.css                   # Styles CSS personnalisés
-│   └── data/                          # Fichiers GeoJSON (futur)
-├── index.html                         # Page principale (dev avec node_modules)
-├── index-gh-pages.html                # Page pour GitHub Pages (avec CDN)
-├── deploy.sh / deploy.ps1             # Scripts de déploiement
-├── .nojekyll                          # Désactive Jekyll sur GitHub Pages
-├── DEPLOYMENT.md                      # Guide de déploiement complet
+│   └── assets/                        # Images et ressources statiques
+├── dist/                              # Dossier de build (généré)
+├── public/                            # Fichiers publics statiques
+├── index.html                         # Page principale
+├── vite.config.ts                     # Configuration Vite
+├── tsconfig.json                      # Configuration TypeScript
 ├── package.json                       # Configuration NPM
 └── README.md                          # Documentation
 ```
@@ -116,12 +135,13 @@ Les données proviennent des services IGN:
 
 ### Personnalisation
 
-Modifiez le fichier `src/js/config/config.js` pour:
+Modifiez le fichier `src/js/config/config.ts` pour:
 
 - Changer la position et le zoom initial de la carte
 - Ajouter de nouveaux fonds de carte
 - Configurer de nouvelles couches de données
 - Personnaliser l'interface utilisateur
+- Configurer Google Analytics
 
 ## Responsive Design
 
@@ -131,39 +151,6 @@ L'application est optimisée pour tous les appareils:
 - **Tablet** (768px - 992px): Sidebar réduite
 - **Mobile** (< 768px): Sidebar masquée avec menu hamburger
 
-## Performances
-
-### Optimisations implémentées
-
-- Chargement paresseux des couches
-- Gestion efficace de la mémoire
-- CSS optimisé avec variables
-- Animations GPU-accélérées
-- Gestion d'erreurs robuste
-
-### Métriques de performance
-
-- Temps de chargement initial: < 2s
-- Fluidité des interactions: 60 FPS
-- Consommation mémoire optimisée
-
-## Contribution
-
-### Standards de code
-
-- Utilisation d'ES6+ (classes, arrow functions, async/await)
-- Nommage en français pour les variables métier
-- Commentaires en français
-- Respect des conventions Leaflet et Fomantic UI
-
-### Tests
-
-Pour l'instant, les tests sont manuels. L'intégration de tests automatisés est prévue dans une future version.
-
 ## Licence
 
-MIT License - Voir le fichier LICENSE pour plus de détails.
-
-## Support
-
-Pour signaler un bug ou demander une fonctionnalité, créez une issue dans le repository du projet.
+MIT License

@@ -1,0 +1,29 @@
+/* === Variables SCSS === */
+$primary-color: #2185d0;
+$secondary-color: #f2711c;
+$success-color: #21ba45;
+$warning-color: #fbbd08;
+$error-color: #db2828;
+
+$sidebar-width: 300px;
+$header-height: 60px;
+
+$border-radius: 4px;
+$box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+$breakpoint-mobile: 768px;
+$breakpoint-tablet: 992px;
+
+/* CSS Custom Properties for runtime usage if needed */
+:root {
+  --primary-color: #{$primary-color};
+  --secondary-color: #{$secondary-color};
+  --success-color: #{$success-color};
+  --warning-color: #{$warning-color};
+  --error-color: #{$error-color};
+
+  --sidebar-width: #{$sidebar-width};
+  --header-height: #{$header-height};
+  --border-radius: #{$border-radius};
+  --box-shadow: #{$box-shadow};
+}
