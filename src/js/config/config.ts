@@ -1,4 +1,4 @@
-class Config {
+export default class Config {
     static get MAP_CONFIG() {
         return {
             center: [46.603354, 1.888334], // Centre de la France
@@ -101,8 +101,9 @@ class Config {
     }
 
     static get ANALYTICS_CONFIG() {
-        // Récupérer l'ID depuis le fichier env.js (géré par GitHub Actions en production)
-        const measurementId = typeof Env !== 'undefined' ? Env.getGAMeasurementId() : '';
+        // Récupérer l'ID depuis les variables d'environnement Vite
+        const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID || '';
+
 
         return {
             measurementId: measurementId,

@@ -1,10 +1,14 @@
-class LayerService {
+import L from 'leaflet';
+import Config from '../config/config';
+
+export default class LayerService {
+
+
     constructor() {
-        this.layers = {};
     }
 
-    createGeoJSONLayer(data, options = {}) {
-        const defaultOptions = {
+    createGeoJSONLayer(data: any, options: L.GeoJSONOptions = {}): L.GeoJSON {
+        const defaultOptions: L.GeoJSONOptions = {
             style: this._getDefaultStyle(),
             onEachFeature: this._onEachFeature.bind(this)
         };
@@ -12,7 +16,7 @@ class LayerService {
         return L.geoJSON(data, { ...defaultOptions, ...options });
     }
 
-    _getDefaultStyle() {
+    private _getDefaultStyle(): L.PathOptions {
         return {
             color: '#ff0000',
             weight: 2,
@@ -21,7 +25,7 @@ class LayerService {
         };
     }
 
-    _onEachFeature(feature, layer) {
+    private _onEachFeature(feature: GeoJSON.Feature, layer: L.Layer): void {
         if (feature.properties) {
             let popupContent = '<div class="ui mini popup">';
             Object.entries(feature.properties).forEach(([key, value]) => {
@@ -35,14 +39,14 @@ class LayerService {
         }
     }
 
-    getDroneRestrictionsLayer() {
+    getDroneRestrictionsLayer(): L.TileLayer {
         const config = Config.LAYERS_CONFIG.dateLayers.droneRestrictions;
 
         // Créer une TileLayer directe avec l'URL WMTS IGN
         return L.tileLayer(config.url, config.options);
     }
 
-    async loadGeoJSONFromFile(filePath) {
+    async loadGeoJSONFromFile(filePath: string): Promise<L.GeoJSON> {
         try {
             const response = await fetch(filePath);
             if (!response.ok) {
@@ -56,8 +60,8 @@ class LayerService {
         }
     }
 
-    getStyleByRestrictionType(type) {
-        const styles = {
+    getStyleByRestrictionType(type: string): L.PathOptions {
+        const styles: Record<string, L.PathOptions> = {
             'interdite': {
                 color: '#ff0000',
                 fillColor: '#ff0000',
@@ -91,10 +95,10 @@ class LayerService {
         return styles[type] || styles.default;
     }
 
-    createStyledGeoJSONLayer(data, styleProperty = 'type') {
+    createStyledGeoJSONLayer(data: any, styleProperty: string = 'type'): L.GeoJSON {
         return L.geoJSON(data, {
-            style: (feature) => {
-                const type = feature.properties[styleProperty];
+            style: (feature: any) => {
+                const type = feature?.properties?.[styleProperty];
                 return this.getStyleByRestrictionType(type);
             },
             onEachFeature: this._onEachFeature.bind(this)

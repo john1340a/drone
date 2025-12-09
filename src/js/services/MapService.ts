@@ -1,4 +1,12 @@
-class MapService {
+import L from 'leaflet';
+import Config from '../config/config';
+
+export default class MapService {
+    private map: L.Map | null;
+    private baseLayers: Record<string, L.TileLayer>;
+    private overlayLayers: Record<string, L.Layer>;
+    private currentBaseLayer: L.TileLayer | null;
+
     constructor() {
         this.map = null;
         this.baseLayers = {};
@@ -6,22 +14,23 @@ class MapService {
         this.currentBaseLayer = null;
     }
 
-    initializeMap(containerId) {
+    initializeMap(containerId: string): L.Map {
         const config = Config.MAP_CONFIG;
 
         this.map = L.map(containerId, {
-            center: config.center,
+            center: config.center as L.LatLngExpression,
             zoom: config.zoom,
             minZoom: config.minZoom,
             maxZoom: config.maxZoom,
-            maxBounds: config.maxBounds,
-            maxBoundsViscosity: config.maxBoundsViscosity,
             zoomControl: false // Désactiver le contrôle par défaut pour le repositionner
         });
 
         // Créer un pane personnalisé pour les overlays (au-dessus des basemaps)
         this.map.createPane('overlayPane');
-        this.map.getPane('overlayPane').style.zIndex = 450; // Au-dessus des tile layers (zIndex 200)
+        const overlayPane = this.map.getPane('overlayPane');
+        if (overlayPane) {
+            overlayPane.style.zIndex = '450'; // Au-dessus des tile layers (zIndex 200)
+        }
 
         this._setupBaseLayers();
         this._setDefaultBaseLayer();
@@ -29,26 +38,25 @@ class MapService {
         return this.map;
     }
 
-    _setupBaseLayers() {
+    private _setupBaseLayers(): void {
         const baseMapsConfig = Config.LAYERS_CONFIG.baseMaps;
 
         Object.entries(baseMapsConfig).forEach(([key, config]) => {
+            // @ts-ignore - config.url can be a string in our structure
             const url = typeof config.url === 'function' ? config.url() : config.url;
             this.baseLayers[key] = L.tileLayer(url, config.options);
         });
     }
 
-    _createFallbackLayer(key, config) {
-        if (config.fallback) {
-            this.baseLayers[key] = L.tileLayer(config.fallback.url, config.fallback.options);
-        }
-    }
 
-    _setDefaultBaseLayer() {
+
+    private _setDefaultBaseLayer(): void {
         this.setBaseLayer('osm');
     }
 
-    setBaseLayer(layerKey) {
+    setBaseLayer(layerKey: string): void {
+        if (!this.map) return;
+
         if (this.currentBaseLayer) {
             this.map.removeLayer(this.currentBaseLayer);
         }
@@ -61,7 +69,9 @@ class MapService {
         }
     }
 
-    addOverlayLayer(layerKey, layer) {
+    addOverlayLayer(layerKey: string, layer: L.Layer): void {
+        if (!this.map) return;
+
         if (this.overlayLayers[layerKey]) {
             this.removeOverlayLayer(layerKey);
         }
@@ -70,14 +80,16 @@ class MapService {
         layer.addTo(this.map);
     }
 
-    removeOverlayLayer(layerKey) {
+    removeOverlayLayer(layerKey: string): void {
+        if (!this.map) return;
+
         if (this.overlayLayers[layerKey]) {
             this.map.removeLayer(this.overlayLayers[layerKey]);
             delete this.overlayLayers[layerKey];
         }
     }
 
-    toggleOverlayLayer(layerKey, layer) {
+    toggleOverlayLayer(layerKey: string, layer: L.Layer): boolean {
         if (this.overlayLayers[layerKey]) {
             this.removeOverlayLayer(layerKey);
             return false;
@@ -87,23 +99,31 @@ class MapService {
         }
     }
 
-    getMap() {
+    getMap(): L.Map | null {
         return this.map;
     }
 
-    fitBounds(bounds, options = {}) {
-        this.map.fitBounds(bounds, options);
+    fitBounds(bounds: L.LatLngBoundsExpression, options: L.FitBoundsOptions = {}): void {
+        if (this.map) {
+            this.map.fitBounds(bounds, options);
+        }
     }
 
-    setView(center, zoom) {
-        this.map.setView(center, zoom);
+    setView(center: L.LatLngExpression, zoom: number): void {
+        if (this.map) {
+            this.map.setView(center, zoom);
+        }
     }
 
-    addControl(control) {
-        control.addTo(this.map);
+    addControl(control: L.Control): void {
+        if (this.map) {
+            control.addTo(this.map);
+        }
     }
 
-    removeControl(control) {
-        this.map.removeControl(control);
+    removeControl(control: L.Control): void {
+        if (this.map) {
+            this.map.removeControl(control);
+        }
     }
 }

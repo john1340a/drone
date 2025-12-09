@@ -1,11 +1,66 @@
-class MapController {
+import '../leaflet-setup';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import 'leaflet-minimap';
+import 'leaflet-minimap/dist/Control.MiniMap.min.css';
+// import 'leaflet.locatecontrol'; 
+import * as LocateControlModule from 'leaflet.locatecontrol';
+import 'leaflet.locatecontrol/dist/L.Control.Locate.min.css';
+
+// Manual registration attempt 3
+// @ts-ignore
+if (LocateControlModule) {
+
+     
+     // Check for various UMD export patterns
+     // @ts-ignore
+     const LocateClass = LocateControlModule.LocateControl || LocateControlModule.default || LocateControlModule;
+     
+     if (typeof LocateClass === 'function' && !(L.Control as any).Locate) {
+        // @ts-ignore
+        L.Control.Locate = LocateClass;
+        // @ts-ignore
+        L.control.locate = function (options) {
+            // @ts-ignore
+            return new LocateClass(options);
+        };
+
+     }
+}
+
+import MapService from '../services/MapService';
+import LayerService from '../services/LayerService';
+import Config from '../config/config';
+import BasemapSwitcher from '../controls/BasemapSwitcher';
+
+declare const lucide: any;
+
+declare global {
+    interface Window {
+        toggleLegend?: () => void;
+    }
+}
+
+export default class MapController {
+    private mapService: MapService;
+    private layerService: LayerService;
+    private isInitialized: boolean;
+    private basemapSwitcher: BasemapSwitcher | null;
+    private layerControl: L.Control.Layers | null;
+    private miniMap: any;
+    private currentMiniMapLayer: L.Layer | null;
+
     constructor() {
         this.mapService = new MapService();
         this.layerService = new LayerService();
         this.isInitialized = false;
+        this.basemapSwitcher = null;
+        this.layerControl = null;
+        this.miniMap = null;
+        this.currentMiniMapLayer = null;
     }
 
-    initialize() {
+    initialize(): void {
         if (this.isInitialized) {
             console.warn('MapController already initialized');
             return;
@@ -22,11 +77,11 @@ class MapController {
         this.isInitialized = true;
     }
 
-    _setupAnalyticsTracking() {
+    private _setupAnalyticsTracking(): void {
         const map = this.mapService.getMap();
         const analytics = window.analyticsService;
 
-        if (!analytics) return;
+        if (!analytics || !map) return;
 
         // Track les zoom
         map.on('zoomend', () => {
@@ -39,62 +94,70 @@ class MapController {
         });
 
         // Track les changements de fond de carte
-        map.on('baselayerchange', (e) => {
+        map.on('baselayerchange', (e: any) => {
             analytics.trackBaseMapChange(e.name);
         });
 
         // Track l'activation/désactivation des overlays
-        map.on('overlayadd', (e) => {
+        map.on('overlayadd', (e: any) => {
             analytics.trackLayerToggle(e.name, true);
         });
 
-        map.on('overlayremove', (e) => {
+        map.on('overlayremove', (e: any) => {
             analytics.trackLayerToggle(e.name, false);
         });
     }
 
-    _setupEventListeners() {
+    private _setupEventListeners(): void {
         this._setupResponsiveEvents();
         this._setupLayerControl();
     }
 
-    _setupLayerControl() {
+    private _setupLayerControl(): void {
+        const map = this.mapService.getMap();
+        if (!map) return;
+
         // Créer le sélecteur visuel de fond de carte (topright)
         const baseMapsConfig = Config.LAYERS_CONFIG.baseMaps;
-        const baseMaps = {};
+        const baseMaps: Record<string, L.TileLayer> = {};
 
-        Object.entries(baseMapsConfig).forEach(([key, config]) => {
-            baseMaps[key] = this.mapService.baseLayers[key];
+        const serviceBaseLayers = (this.mapService as any)['baseLayers'];
+        Object.entries(baseMapsConfig).forEach(([key]) => {
+             if (serviceBaseLayers[key]) {
+                 baseMaps[key] = serviceBaseLayers[key];
+             }
         });
 
         this.basemapSwitcher = new BasemapSwitcher(this.mapService, baseMaps);
-        this.basemapSwitcher.createControl().addTo(this.mapService.getMap());
+        this.basemapSwitcher.createControl().addTo(map);
 
         // Créer un contrôle séparé pour les overlays (topright, en dessous du basemap switcher)
-        const overlayMaps = {};
+        const overlayMaps: Record<string, L.Layer> = {};
         const droneLayer = this.layerService.getDroneRestrictionsLayer();
         overlayMaps["Restrictions Drones (IGN)"] = droneLayer;  // Sans emoji
 
-        // Contrôle Leaflet standard pour les overlays uniquement
-        this.layerControl = L.control.layers(null, overlayMaps, {
+        this.layerControl = L.control.layers(undefined, overlayMaps, {
             position: 'topright',
             collapsed: true
-        }).addTo(this.mapService.getMap());
+        }).addTo(map);
 
-        // Configuration du comportement hover pour desktop (avec délai)
+        // Configuration du comportement hover pour desktop
         setTimeout(() => {
             this._setupLayerControlHover();
         }, 200);
     }
 
-    _setupLayerControlHover() {
+    private _setupLayerControlHover(): void {
+        if (!this.layerControl) return;
+        
         const controlContainer = this.layerControl.getContainer();
+        if (!controlContainer) return;
 
         if (!this._isMobileDevice()) {
-            // Desktop: hover pour ouvrir/fermer
             controlContainer.addEventListener('mouseenter', () => {
                 try {
-                    if (!controlContainer.classList.contains('leaflet-control-layers-expanded')) {
+                    // Check if class list implies collapsed state, but leaflet API is safer
+                    if (!controlContainer.classList.contains('leaflet-control-layers-expanded') && this.layerControl) {
                         this.layerControl.expand();
                     }
                 } catch (error) {
@@ -105,7 +168,7 @@ class MapController {
             controlContainer.addEventListener('mouseleave', () => {
                 setTimeout(() => {
                     try {
-                        if (!controlContainer.matches(':hover')) {
+                        if (!controlContainer.matches(':hover') && this.layerControl) {
                             this.layerControl.collapse();
                         }
                     } catch (error) {
@@ -116,53 +179,46 @@ class MapController {
         }
     }
 
-    _isMobileDevice() {
+    private _isMobileDevice(): boolean {
         return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     }
 
-    _setupResponsiveEvents() {
+    private _setupResponsiveEvents(): void {
         window.addEventListener('resize', () => {
             this._handleResize();
         });
     }
 
-    _setupUI() {
+    private _setupUI(): void {
         this._addMapControls();
     }
 
-    _addMapControls() {
-        // Titre
+    private _addMapControls(): void {
         this._addTitleControl();
-
-        // Contrôle de zoom repositionné
         this._addZoomControl();
-
-        // Échelle
         this._addScaleControl();
-
-        // Légende
         this._addLegendControl();
-
-        // MiniMap
         this._addMiniMapControl();
-
-        // Géolocalisation
         this._addLocateControl();
-
-        // Navigation DOM-TOM avec geocoder
         this._addDomTomGeocoder();
     }
 
-    _addZoomControl() {
-        L.control.zoom({
-            position: 'topleft'
-        }).addTo(this.mapService.getMap());
+    private _addZoomControl(): void {
+        const map = this.mapService.getMap();
+        if (map) {
+            L.control.zoom({
+                position: 'topleft'
+            }).addTo(map);
+        }
     }
 
-    _addTitleControl() {
-        const titleControl = L.control({position: 'topleft'});
+    private _addTitleControl(): void {
+        const map = this.mapService.getMap();
+        if (!map) return;
 
-        titleControl.onAdd = function (map) {
+        const titleControl = new L.Control({position: 'topleft'});
+
+        titleControl.onAdd = function (_map) {
             const div = L.DomUtil.create('div', 'map-title-control');
             div.innerHTML = `
                 <i data-lucide="map-pin" style="width: 18px; height: 18px; margin-right: 8px; vertical-align: middle;"></i>
@@ -171,21 +227,27 @@ class MapController {
             return div;
         };
 
-        titleControl.addTo(this.mapService.getMap());
+        titleControl.addTo(map);
     }
 
-    _addScaleControl() {
-        L.control.scale({
-            position: 'bottomleft',
-            metric: true,
-            imperial: false
-        }).addTo(this.mapService.getMap());
+    private _addScaleControl(): void {
+        const map = this.mapService.getMap();
+        if (map) {
+            L.control.scale({
+                position: 'bottomleft',
+                metric: true,
+                imperial: false
+            }).addTo(map);
+        }
     }
 
-    _addLegendControl() {
-        const legend = L.control({position: 'bottomleft'});
+    private _addLegendControl(): void {
+        const map = this.mapService.getMap();
+        if (!map) return;
 
-        legend.onAdd = function (map) {
+        const legend = new L.Control({position: 'bottomleft'});
+
+        legend.onAdd = function (_map) {
             const div = L.DomUtil.create('div', 'info legend');
 
             div.innerHTML = `
@@ -205,9 +267,8 @@ class MapController {
             return div;
         };
 
-        legend.addTo(this.mapService.getMap());
+        legend.addTo(map);
 
-        // Fonction globale pour toggle la légende
         window.toggleLegend = function() {
             const legendContent = document.querySelector('.legend-content');
             const legendToggle = document.querySelector('.legend-toggle');
@@ -226,13 +287,17 @@ class MapController {
         };
     }
 
-    _addMiniMapControl() {
+    private _addMiniMapControl(): void {
+        const map = this.mapService.getMap();
+        if (!map) return;
+
         // Créer une couche OSM pour la minimap
         const miniMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OSM contributors',
             maxZoom: 18
         });
 
+        // @ts-ignore - Leaflet MiniMap type definitions might be missing
         const miniMap = new L.Control.MiniMap(miniMapLayer, {
             position: 'bottomright',
             width: 150,
@@ -241,56 +306,50 @@ class MapController {
             toggleDisplay: true
         });
 
-        miniMap.addTo(this.mapService.getMap());
+        miniMap.addTo(map);
         this.miniMap = miniMap;
         this.currentMiniMapLayer = miniMapLayer;
 
-        // Écouter les changements de fond de carte pour synchroniser la minimap
-        this.mapService.getMap().on('baselayerchange', (e) => {
+        map.on('baselayerchange', (e: any) => {
             this._updateMiniMapLayer(e.layer);
         });
     }
 
-    _updateMiniMapLayer(newLayer) {
+    private _updateMiniMapLayer(newLayer: any): void {
         if (!this.miniMap || !this.currentMiniMapLayer) return;
 
         try {
-            // Retirer l'ancienne couche du minimap
             this.miniMap._miniMap.removeLayer(this.currentMiniMapLayer);
 
-            // Créer une nouvelle couche identique pour le minimap basée sur le type de couche
             const baseMapsConfig = Config.LAYERS_CONFIG.baseMaps;
 
-            // Détecter si c'est une couche satellite (Esri World Imagery ou autre)
             if (newLayer._url && (newLayer._url.includes('arcgisonline.com') || newLayer._url.includes('satellite'))) {
-                // Couche Satellite (Esri World Imagery)
-                const satUrl = typeof baseMapsConfig.satellite.url === 'function'
-                    ? baseMapsConfig.satellite.url()
-                    : baseMapsConfig.satellite.url;
+                // @ts-ignore
+                const satUrl = typeof baseMapsConfig.satellite.url === 'function' ? baseMapsConfig.satellite.url() : baseMapsConfig.satellite.url;
                 this.currentMiniMapLayer = L.tileLayer(satUrl, {
                     attribution: '&copy; Esri',
                     maxZoom: 19
                 });
             } else {
-                // Couche OSM par défaut
                 this.currentMiniMapLayer = L.tileLayer(baseMapsConfig.osm.url, {
                     attribution: '&copy; OSM contributors',
                     maxZoom: 18
                 });
             }
 
-            // Ajouter la nouvelle couche au minimap
             this.miniMap._miniMap.addLayer(this.currentMiniMapLayer);
         } catch (error) {
             console.warn('Erreur lors de la mise à jour du minimap:', error);
         }
     }
 
-    _addLocateControl() {
+    private _addLocateControl(): L.Control | undefined {
         const map = this.mapService.getMap();
         const analytics = window.analyticsService;
 
-        // Contrôle de géolocalisation avec gestion d'erreur améliorée
+        if (!map) return;
+
+        // @ts-ignore
         const locateControl = L.control.locate({
             position: 'topleft',
             strings: {
@@ -300,43 +359,29 @@ class MapController {
             },
             locateOptions: {
                 maxZoom: 16,
-                watch: false,  // Désactiver le watch sur iOS pour éviter les erreurs
+                watch: false,
                 enableHighAccuracy: true,
-                maximumAge: 30000,  // Augmenté pour iOS
-                timeout: 15000  // Augmenté pour iOS
+                maximumAge: 30000,
+                timeout: 15000
             },
-            onLocationError: function(err) {
+            onLocationError: function(err: any) {
                 console.warn('Erreur de géolocalisation:', err.message);
-
-                // Gestion spécifique des erreurs iOS
                 let userMessage = '';
-                if (err.code === 1) {
-                    // Permission refusée
-                    userMessage = 'Veuillez autoriser la géolocalisation dans les réglages de votre navigateur';
-                } else if (err.code === 2) {
-                    // Position indisponible
-                    userMessage = 'Position indisponible. Vérifiez votre connexion GPS';
-                } else if (err.code === 3) {
-                    // Timeout
-                    userMessage = 'La géolocalisation prend trop de temps. Réessayez';
-                } else {
-                    userMessage = 'Impossible d\'obtenir votre position';
-                }
+                if (err.code === 1) userMessage = 'Veuillez autoriser la géolocalisation dans les réglages de votre navigateur';
+                else if (err.code === 2) userMessage = 'Position indisponible. Vérifiez votre connexion GPS';
+                else if (err.code === 3) userMessage = 'La géolocalisation prend trop de temps. Réessayez';
+                else userMessage = 'Impossible d\'obtenir votre position';
 
-                // Afficher un message discret (pas d'alert intrusif)
-                if (console) {
-                    console.info('Géolocalisation:', userMessage);
-                }
+                if (console) console.info('Géolocalisation:', userMessage);
             }
         }).addTo(map);
 
-        // Track les événements de géolocalisation
         if (analytics) {
             map.on('locationfound', () => {
                 analytics.trackGeolocation(true);
             });
 
-            map.on('locationerror', (e) => {
+            map.on('locationerror', (e: any) => {
                 analytics.trackGeolocation(false);
                 console.debug('Location error:', e.message);
             });
@@ -345,26 +390,24 @@ class MapController {
         return locateControl;
     }
 
-    _initializeLucideIcons() {
-        // Initialiser les icônes Lucide après un délai pour s'assurer que tout est chargé
+    private _initializeLucideIcons(): void {
         setTimeout(() => {
-            if (window.lucide) {
+            if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
             this._setupClickOutsideToClose();
         }, 500);
     }
 
-    _setupClickOutsideToClose() {
+    private _setupClickOutsideToClose(): void {
         if (window.innerWidth <= 768) {
             document.addEventListener('click', function(e) {
                 const legendControl = document.querySelector('.info.legend');
                 const legendContent = document.querySelector('.legend-content');
                 const legendToggle = document.querySelector('.legend-toggle');
 
-                // Si la légende est ouverte et qu'on clique en dehors
                 if (legendContent && legendContent.classList.contains('show') &&
-                    legendControl && !legendControl.contains(e.target)) {
+                    legendControl && !legendControl.contains(e.target as Node)) {
 
                     legendContent.classList.remove('show');
                     if (legendToggle) {
@@ -375,19 +418,20 @@ class MapController {
         }
     }
 
-    _loadInitialLayers() {
-        // Les couches sont maintenant gérées par le contrôle natif Leaflet
-        // Pas besoin de logique spéciale ici
+    private _loadInitialLayers(): void {
+        // Init logic for layers if any
     }
 
-    _setupTileErrorHandling() {
-        // Gestion des erreurs de chargement des tuiles (silencieux)
-        this.mapService.getMap().on('tileerror', function(e) {
-            // Erreur silencieuse - pas d'affichage console
-        });
+    private _setupTileErrorHandling(): void {
+        const map = this.mapService.getMap();
+        if (map) {
+            map.on('tileerror', function(_e) {
+                // Silent error
+            });
+        }
     }
 
-    async loadGeoJSONLayer(filePath, layerKey) {
+    async loadGeoJSONLayer(filePath: string, layerKey: string): Promise<L.GeoJSON> {
         try {
             const layer = await this.layerService.loadGeoJSONFromFile(filePath);
             this.mapService.addOverlayLayer(layerKey, layer);
@@ -399,42 +443,44 @@ class MapController {
         }
     }
 
-    _handleResize() {
-        if (this.mapService.getMap()) {
+    private _handleResize(): void {
+        const map = this.mapService.getMap();
+        if (map) {
             setTimeout(() => {
-                this.mapService.getMap().invalidateSize();
+                map.invalidateSize();
             }, 100);
         }
     }
 
-    _showErrorMessage(message) {
+    private _showErrorMessage(message: string): void {
         console.error(message);
     }
 
-    _showSuccessMessage(message) {
-        console.log(message);
-    }
 
-    getMapService() {
+
+    getMapService(): MapService {
         return this.mapService;
     }
 
-    getLayerService() {
+    getLayerService(): LayerService {
         return this.layerService;
     }
 
-    centerMapOnLocation(lat, lng, zoom = 15) {
+    centerMapOnLocation(lat: number, lng: number, zoom: number = 15): void {
         this.mapService.setView([lat, lng], zoom);
     }
 
-    fitMapToBounds(bounds) {
+    fitMapToBounds(bounds: L.LatLngBoundsExpression): void {
         this.mapService.fitBounds(bounds);
     }
 
-    _addDomTomGeocoder() {
-        const geocoderControl = L.control({position: 'topright'});
+    private _addDomTomGeocoder(): void {
+        const map = this.mapService.getMap();
+        if (!map) return;
 
-        geocoderControl.onAdd = (map) => {
+        const geocoderControl = new L.Control({position: 'topright'});
+
+        geocoderControl.onAdd = (_map) => {
             const div = L.DomUtil.create('div', 'domtom-geocoder');
             div.innerHTML = `
                 <div class="custom-select" id="domtom-select">
@@ -466,35 +512,32 @@ class MapController {
                     </div>
                 </div>
             `;
-
-            // Empêcher la propagation des événements
             L.DomEvent.disableClickPropagation(div);
             L.DomEvent.disableScrollPropagation(div);
-
             return div;
         };
 
-        geocoderControl.addTo(this.mapService.getMap());
+        geocoderControl.addTo(map);
 
-        // Ajouter l'event listener pour le dropdown personnalisé
         setTimeout(() => {
             this._setupCustomSelect();
         }, 100);
     }
 
-    _setupCustomSelect() {
+    private _setupCustomSelect(): void {
         const customSelect = document.getElementById('domtom-select');
+        if (!customSelect) return;
+
         const trigger = customSelect.querySelector('.select-trigger');
-        const options = customSelect.querySelector('.select-options');
         const selectOptions = customSelect.querySelectorAll('.select-option');
 
-        // Toggle dropdown
+        if (!trigger) return;
+
         trigger.addEventListener('click', (e) => {
             e.stopPropagation();
             customSelect.classList.toggle('active');
         });
 
-        // Handle option selection
         selectOptions.forEach(option => {
             option.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -504,26 +547,24 @@ class MapController {
                     this.navigateToTerritory(value);
                 }
 
-                // Reset à l'icône globe après navigation
-                trigger.querySelector('.selected-option').textContent = '🌍';
+                const selectedIcon = trigger.querySelector('.selected-option');
+                if (selectedIcon) selectedIcon.textContent = '🌍';
                 customSelect.classList.remove('active');
             });
         });
 
-        // Fermer le dropdown en cliquant ailleurs
         document.addEventListener('click', () => {
             customSelect.classList.remove('active');
         });
     }
 
-    navigateToTerritory(territoryKey) {
+    navigateToTerritory(territoryKey: string): void {
         const territories = Config.DOMTOM_CONFIG;
+        // @ts-ignore
         const territory = territories[territoryKey];
 
         if (territory) {
-            this.mapService.setView(territory.center, territory.zoom);
-
-            // Track le changement de région
+            this.mapService.setView(territory.center as L.LatLngExpression, territory.zoom);
             if (window.analyticsService) {
                 window.analyticsService.trackRegionChange(territory.name);
             }

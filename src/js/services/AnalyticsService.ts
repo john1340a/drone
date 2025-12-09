@@ -1,14 +1,27 @@
+import Config from '../config/config';
+
+// Déclaration globale pour gtag (Google Analytics)
+declare global {
+    interface Window {
+        dataLayer: any[];
+    }
+    const gtag: (...args: any[]) => void;
+}
+
 /**
  * Service de gestion des analytics (Google Analytics 4)
  * Centralise tous les événements de tracking
  */
-class AnalyticsService {
+export default class AnalyticsService {
+    private config: typeof Config.ANALYTICS_CONFIG;
+    private enabled: boolean;
+
     constructor() {
         this.config = Config.ANALYTICS_CONFIG;
         this.enabled = this.config.enabled && typeof gtag !== 'undefined';
 
         if (this.enabled) {
-            console.log('📊 Analytics Service initialisé');
+             // Enabled
         } else {
             console.warn('📊 Analytics désactivé ou gtag non disponible');
         }
@@ -16,10 +29,8 @@ class AnalyticsService {
 
     /**
      * Track un événement générique
-     * @param {string} eventName - Nom de l'événement
-     * @param {Object} params - Paramètres additionnels
      */
-    trackEvent(eventName, params = {}) {
+    trackEvent(eventName: string, params: Record<string, any> = {}): void {
         if (!this.enabled) return;
 
         try {
@@ -27,7 +38,7 @@ class AnalyticsService {
                 ...params,
                 timestamp: new Date().toISOString()
             });
-            console.log(`📊 Event tracked: ${eventName}`, params);
+            // console.log(`📊 Event tracked: ${eventName}`, params);
         } catch (error) {
             console.error('❌ Erreur lors du tracking:', error);
         }
@@ -36,7 +47,7 @@ class AnalyticsService {
     /**
      * Track le chargement initial de la page
      */
-    trackPageLoad() {
+    trackPageLoad(): void {
         this.trackEvent('page_load', {
             page_title: document.title,
             page_location: window.location.href,
@@ -47,10 +58,8 @@ class AnalyticsService {
 
     /**
      * Track l'activation/désactivation d'une couche
-     * @param {string} layerName - Nom de la couche
-     * @param {boolean} isActive - État de la couche
      */
-    trackLayerToggle(layerName, isActive) {
+    trackLayerToggle(layerName: string, isActive: boolean): void {
         if (!this.config.events.layerToggle) return;
 
         this.trackEvent('layer_toggle', {
@@ -61,9 +70,8 @@ class AnalyticsService {
 
     /**
      * Track le changement de fond de carte
-     * @param {string} baseMapName - Nom du fond de carte
      */
-    trackBaseMapChange(baseMapName) {
+    trackBaseMapChange(baseMapName: string): void {
         if (!this.config.events.mapInteraction) return;
 
         this.trackEvent('basemap_change', {
@@ -73,10 +81,8 @@ class AnalyticsService {
 
     /**
      * Track les interactions avec la carte (zoom, pan)
-     * @param {string} action - Type d'interaction (zoom_in, zoom_out, pan)
-     * @param {Object} data - Données additionnelles (niveau de zoom, position)
      */
-    trackMapInteraction(action, data = {}) {
+    trackMapInteraction(action: string, data: { zoom?: number; center?: { lat: number; lng: number } } = {}): void {
         if (!this.config.events.mapInteraction) return;
 
         this.trackEvent('map_interaction', {
@@ -89,9 +95,8 @@ class AnalyticsService {
 
     /**
      * Track le changement de région (Métropole, DOM-TOM)
-     * @param {string} regionName - Nom de la région
      */
-    trackRegionChange(regionName) {
+    trackRegionChange(regionName: string): void {
         if (!this.config.events.regionChange) return;
 
         this.trackEvent('region_change', {
@@ -101,9 +106,8 @@ class AnalyticsService {
 
     /**
      * Track l'utilisation de la géolocalisation
-     * @param {boolean} success - Si la géolocalisation a réussi
      */
-    trackGeolocation(success) {
+    trackGeolocation(success: boolean): void {
         if (!this.config.events.mapInteraction) return;
 
         this.trackEvent('geolocation', {
@@ -113,9 +117,8 @@ class AnalyticsService {
 
     /**
      * Track une recherche (si implémentée)
-     * @param {string} query - Terme recherché
      */
-    trackSearch(query) {
+    trackSearch(query: string): void {
         if (!this.config.events.search) return;
 
         this.trackEvent('search', {
@@ -125,10 +128,8 @@ class AnalyticsService {
 
     /**
      * Track les erreurs JavaScript
-     * @param {Error} error - Objet erreur
-     * @param {string} context - Contexte de l'erreur
      */
-    trackError(error, context = '') {
+    trackError(error: Error, context: string = ''): void {
         if (!this.config.events.error) return;
 
         this.trackEvent('error', {
@@ -141,7 +142,7 @@ class AnalyticsService {
     /**
      * Track la durée de session (à appeler avant déchargement)
      */
-    trackSessionDuration() {
+    trackSessionDuration(): void {
         const sessionStart = sessionStorage.getItem('session_start');
         if (sessionStart) {
             const duration = Date.now() - parseInt(sessionStart);
@@ -154,7 +155,7 @@ class AnalyticsService {
     /**
      * Initialise le tracking de session
      */
-    initSessionTracking() {
+    initSessionTracking(): void {
         // Enregistre le début de session
         if (!sessionStorage.getItem('session_start')) {
             sessionStorage.setItem('session_start', Date.now().toString());
@@ -169,7 +170,7 @@ class AnalyticsService {
     /**
      * Track les performances de chargement
      */
-    trackPerformance() {
+    trackPerformance(): void {
         if (typeof performance === 'undefined' || !performance.timing) return;
 
         const timing = performance.timing;

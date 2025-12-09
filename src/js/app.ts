@@ -1,18 +1,33 @@
+
+import MapController from './controllers/MapController';
+import AnalyticsService from './services/AnalyticsService';
+
+declare global {
+    interface Window {
+        app: App;
+        analyticsService?: any;
+        L: any;
+    }
+}
+
 class App {
+    private mapController: MapController | null;
+    private analyticsService: AnalyticsService | null;
+
     constructor() {
         this.mapController = null;
         this.analyticsService = null;
     }
 
-    init() {
+    init(): void {
         try {
             this._detectBrowserAndPlatform();
-            this._validateDependencies();
+            // this._validateDependencies(); // Not needed with imports
             this._initializeAnalytics();
             this._initializeController();
             this._setupGlobalErrorHandling();
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erreur lors de l\'initialisation de l\'application:', error);
             this._showCriticalError('Erreur critique lors de l\'initialisation de l\'application');
 
@@ -23,7 +38,7 @@ class App {
         }
     }
 
-    _detectBrowserAndPlatform() {
+    private _detectBrowserAndPlatform(): void {
         const userAgent = navigator.userAgent.toLowerCase();
         const body = document.body;
 
@@ -48,7 +63,7 @@ class App {
         }
     }
 
-    _initializeAnalytics() {
+    private _initializeAnalytics(): void {
         this.analyticsService = new AnalyticsService();
         this.analyticsService.trackPageLoad();
         this.analyticsService.initSessionTracking();
@@ -56,7 +71,9 @@ class App {
         // Track les performances après chargement complet
         window.addEventListener('load', () => {
             setTimeout(() => {
-                this.analyticsService.trackPerformance();
+                if (this.analyticsService) {
+                    this.analyticsService.trackPerformance();
+                }
             }, 1000);
         });
 
@@ -64,30 +81,12 @@ class App {
         window.analyticsService = this.analyticsService;
     }
 
-    _validateDependencies() {
-        const requiredGlobals = ['L', '$'];
-        const missing = requiredGlobals.filter(global => typeof window[global] === 'undefined');
-
-        if (missing.length > 0) {
-            throw new Error(`Dépendances manquantes: ${missing.join(', ')}`);
-        }
-
-        // Vérifier que les classes sont disponibles
-        if (typeof Config === 'undefined') {
-            throw new Error('Config class not loaded');
-        }
-
-        if (typeof MapController === 'undefined') {
-            throw new Error('MapController class not loaded');
-        }
-    }
-
-    _initializeController() {
+    private _initializeController(): void {
         this.mapController = new MapController();
         this.mapController.initialize();
     }
 
-    _setupGlobalErrorHandling() {
+    private _setupGlobalErrorHandling(): void {
         window.addEventListener('error', (event) => {
             // Filtrer les erreurs non critiques du navigateur/extensions
             if (event.error && event.error.message &&
@@ -113,21 +112,23 @@ class App {
         });
     }
 
-    _showCriticalError(message) {
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'ui negative message';
-        errorDiv.innerHTML = `
-            <div class="header">Erreur Critique</div>
-            <p>${message}</p>
-        `;
-
-        const container = document.querySelector('body');
-        if (container) {
-            container.insertBefore(errorDiv, container.firstChild);
+    private _showCriticalError(message: string): void {
+        console.error(message);
+        const $ = (window as any).$;
+        if ($ && $.toast) {
+            $.toast({
+                class: 'error',
+                title: 'Erreur Critique',
+                message: message,
+                displayTime: 0, // Ne disparait pas auto
+                closeIcon: true
+            });
+        } else {
+            alert(message);
         }
     }
 
-    getMapController() {
+    getMapController(): MapController | null {
         return this.mapController;
     }
 }

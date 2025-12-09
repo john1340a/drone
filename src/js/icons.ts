@@ -1,20 +1,24 @@
 // Module pour utiliser les icônes Lucide en JavaScript vanilla
 // Inspiré de Shadcn UI
 
+declare const lucide: { createIcons: () => void };
+
 // Import des icônes Lucide via CDN
-function loadLucideIcons() {
-    if (!window.lucide) {
+export function loadLucideIcons(): void {
+    if (!(window as any).lucide) {
         const script = document.createElement('script');
         script.src = 'https://unpkg.com/lucide@latest/dist/umd/lucide.js';
         script.onload = () => {
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
         };
         document.head.appendChild(script);
     }
 }
 
 // Fonction pour créer une icône SVG
-function createIcon(iconName, className = '', size = 20) {
+function createIcon(iconName: string, className: string = '', size: number = 20): HTMLElement {
     const iconElement = document.createElement('i');
     iconElement.setAttribute('data-lucide', iconName);
     iconElement.className = className;
@@ -25,7 +29,7 @@ function createIcon(iconName, className = '', size = 20) {
 }
 
 // Icônes utilisées dans l'application (mappées depuis Shadcn UI)
-const Icons = {
+export const Icons = {
     // Navigation et interface
     map: (className = '', size = 20) => createIcon('map', className, size),
     layers: (className = '', size = 20) => createIcon('layers', className, size),
@@ -51,12 +55,9 @@ const Icons = {
     target: (className = '', size = 20) => createIcon('target', className, size)
 };
 
-// Initialiser les icônes quand le DOM est prêt
+// Initialiser les icônes quand le DOM est prêt (optionnel si géré par MapController)
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', loadLucideIcons);
 } else {
     loadLucideIcons();
 }
-
-// Export pour utilisation
-window.Icons = Icons;

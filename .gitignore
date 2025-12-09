@@ -1,11 +1,14 @@
 # Dependencies
 node_modules/
 
+# Build output
+dist/
+_site/
+
 # Environment variables
 .env
 .env.local
 .env.production
-src/js/config/env.js
 
 # Tests
 tests/

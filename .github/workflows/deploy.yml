@@ -21,36 +21,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Prepare deployment directory
-        run: |
-          mkdir -p _site
-          # Copier le code source
-          rsync -av --exclude='.git' --exclude='node_modules' --exclude='_site' ./ _site/
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
 
-          # Nettoyage .gitignore pour être sûr
-          rm -f _site/.gitignore
+      - name: Install Dependencies
+        run: npm ci
 
-      - name: Create env.js directly in _site
-        run: |
-          # S'assurer que le dossier existe
-          mkdir -p _site/src/js/config
-
-          # Créer le fichier directement dans le dossier de déploiement
-          cat > _site/src/js/config/env.js << 'EOF'
-          // Configuration des variables d'environnement
-          class Env {
-              static getGAMeasurementId() {
-                  return '${{ secrets.VITE_GA_MEASUREMENT_ID }}';
-              }
-          }
-          EOF
-
-          echo "✅ env.js créé directement dans _site"
-          ls -la _site/src/js/config/
-          cat _site/src/js/config/env.js
-
-      - name: Create .nojekyll in _site
-        run: touch _site/.nojekyll
+      - name: Build
+        run: npm run build
+        env:
+          VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -58,12 +41,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "_site"
-
-      - name: Debug Artifact
-        run: |
-          echo "Debug: Listing directory structure of _site"
-          find _site -type f
+          path: "dist"
 
       - name: Deploy to GitHub Pages
         id: deployment

@@ -1,18 +1,32 @@
-class BasemapSwitcher {
-    constructor(mapService, baseMaps) {
+import L from 'leaflet';
+import MapService from '../services/MapService';
+
+declare global {
+    interface Window {
+        analyticsService?: any;
+    }
+}
+
+export default class BasemapSwitcher {
+    private mapService: MapService;
+    private baseMaps: Record<string, L.TileLayer>;
+    private currentBasemap: string;
+    private control: L.Control | null;
+
+    constructor(mapService: MapService, baseMaps: Record<string, L.TileLayer>) {
         this.mapService = mapService;
         this.baseMaps = baseMaps;
         this.currentBasemap = 'osm';
         this.control = null;
     }
 
-    createControl() {
+    createControl(): L.Control {
         const BasemapControl = L.Control.extend({
             options: {
                 position: 'topright'
             },
 
-            onAdd: (map) => {
+            onAdd: (_map: L.Map) => {
                 const container = L.DomUtil.create('div', 'leaflet-basemap-switcher leaflet-bar leaflet-control');
 
                 // Empêcher la propagation des événements de la carte
@@ -35,7 +49,9 @@ class BasemapSwitcher {
         return this.control;
     }
 
-    _getHTML() {
+    private _getHTML(): string {
+        // Note: src path should be resolved correctly by Vite if assets are in public or imported
+        // Ideally we should import images, but sticking to paths for now.
         return `
             <div class="basemap-switcher-container">
                 <a class="basemap-toggle-link leaflet-basemap-toggle" href="#" title="Fonds de carte">
@@ -55,11 +71,14 @@ class BasemapSwitcher {
                 </div>
             </div>
         `;
+        // WARNING: src/assets/images path might break in production build if not handled by Vite/public folder. 
+        // Vite handles paths relative to root in dev, but in build it expects imports or public dir.
+        // Assuming assets are in public/ or src/assets and accessed via URL.
     }
 
-    _attachEvents(container) {
+    private _attachEvents(container: HTMLElement): void {
         const options = container.querySelectorAll('.basemap-option');
-        const toggleLink = container.querySelector('.basemap-toggle-link');
+        const toggleLink = container.querySelector('.basemap-toggle-link') as HTMLElement;
         const basemapContainer = container.querySelector('.basemap-switcher-container');
 
         // Gérer les clics sur les options de basemap
@@ -67,17 +86,19 @@ class BasemapSwitcher {
             option.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const basemapKey = option.getAttribute('data-basemap');
-                this._switchBasemap(basemapKey, container);
+                if (basemapKey) {
+                    this._switchBasemap(basemapKey, container);
+                }
 
                 // Sur mobile, fermer après sélection
-                if (this._isMobile()) {
+                if (this._isMobile() && basemapContainer) {
                     basemapContainer.classList.remove('expanded');
                 }
             });
         });
 
         // Gérer le toggle sur mobile uniquement
-        if (toggleLink && this._isMobile()) {
+        if (toggleLink && this._isMobile() && basemapContainer) {
             toggleLink.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -86,11 +107,11 @@ class BasemapSwitcher {
         }
     }
 
-    _isMobile() {
+    private _isMobile(): boolean {
         return window.innerWidth <= 768;
     }
 
-    _switchBasemap(basemapKey, container) {
+    private _switchBasemap(basemapKey: string, container: HTMLElement): void {
         if (basemapKey === this.currentBasemap) return;
 
         // Récupérer la nouvelle couche
@@ -126,7 +147,7 @@ class BasemapSwitcher {
         }
     }
 
-    addTo(map) {
+    addTo(map: L.Map): this {
         if (this.control) {
             this.control.addTo(map);
         }
