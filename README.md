@@ -33,13 +33,6 @@ npm run build
 
 L'application sera accessible sur `http://localhost:3000/drone/`.
 
-## 🌍 Déploiement
-
-Le déploiement est automatisé via **GitHub Actions** vers GitHub Pages.
-
-1. Ajouter le secret `VITE_GA_MEASUREMENT_ID` dans les paramètres du repo.
-2. Pousser sur la branche `main`.
-
 ## Licence
 
 MIT License
