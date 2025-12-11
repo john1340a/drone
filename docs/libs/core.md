@@ -32,3 +32,12 @@ Ce document détaille les technologies fondamentales utilisées pour la construc
 **Pourquoi** : Identifie les problèmes de qualité de code et assure le respect des conventions avant même la compilation.
 
 - **Documentation** : [https://eslint.org/](https://eslint.org/)
+
+## Playwright
+
+**Rôle** : Tests End-to-End (E2E).
+**Pourquoi** : Permet de tester l'application comme un utilisateur réel sur de multiples navigateurs (Chromium, Firefox, WebKit) et appareils mobiles. Il est plus fiable et rapide que les anciennes solutions comme Selenium ou Puppeteer.
+
+- **Documentation** : [https://playwright.dev/](https://playwright.dev/)
+- **Configuration** : [`playwright.config.ts`](../../playwright.config.ts)
+- **Exécution** : `npm run test`

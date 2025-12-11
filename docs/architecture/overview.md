@@ -67,3 +67,11 @@ L'application utilise **Vite** pour la gestion des variables d'environnement.
 - **Local** (`.env`) : Variables pour le développement.
 - **Production** (GitHub Actions) : Injection des secrets (ex: `VITE_GA_MEASUREMENT_ID`) lors du build.
 - **Accès dans le code** : Via `import.meta.env`.
+
+## Qualité & Tests
+
+L'application maintient un haut niveau de qualité grâce à :
+
+1.  **Typage Strict** : TypeScript empêche la plupart des erreurs de runtime.
+2.  **Linting** : ESLint assure la cohérence du code.
+3.  **Tests E2E** : **Playwright** valide automatiquement les scénarios critiques (chargement de la carte, contrôle des couches, responsive design mobile) avant chaque déploiement.

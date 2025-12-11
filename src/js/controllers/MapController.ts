@@ -141,6 +141,9 @@ export default class MapController {
             collapsed: true
         }).addTo(map);
 
+        // Enable by default
+        droneLayer.addTo(map);
+
         // Configuration du comportement hover pour desktop
         setTimeout(() => {
             this._setupLayerControlHover();

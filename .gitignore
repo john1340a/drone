@@ -10,9 +10,11 @@ _site/
 .env.local
 .env.production
 
-# Tests
-tests/
-*.test.js
+# Tests Artifacts (Playwright)
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
 
 # Documentation de validation
 VALIDATION.md
@@ -42,3 +44,4 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
