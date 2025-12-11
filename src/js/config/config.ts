@@ -26,7 +26,7 @@ export default class Config {
                     options: {
                         minZoom: 0,
                         maxZoom: 21,        // Permettre zoom jusqu'à 21
-                        maxNativeZoom: 19,  // Esri World Imagery fournit jusqu'à 19, oversampling au-delà
+                        maxNativeZoom: 16,  // On limite à 16 pour garantir l'affichage partout (oversampling au-delà)
                         attribution: '&copy; <a href="https://www.esri.com/">Esri</a>, Maxar, Earthstar Geographics'
                     }
                 }
