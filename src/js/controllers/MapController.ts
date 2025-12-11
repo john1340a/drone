@@ -6,6 +6,8 @@ import 'leaflet-minimap/dist/Control.MiniMap.min.css';
 // import 'leaflet.locatecontrol'; 
 import * as LocateControlModule from 'leaflet.locatecontrol';
 import 'leaflet.locatecontrol/dist/L.Control.Locate.min.css';
+import 'leaflet-control-geocoder';
+import 'leaflet-control-geocoder/dist/Control.Geocoder.css';
 
 // Manual registration attempt 3
 // @ts-ignore
@@ -204,6 +206,30 @@ export default class MapController {
         this._addMiniMapControl();
         this._addLocateControl();
         this._addDomTomGeocoder();
+        this._addSearchControl();
+    }
+
+    private _addSearchControl(): void {
+        const map = this.mapService.getMap();
+        if (!map) return;
+
+        // @ts-ignore
+        L.Control.geocoder({
+            defaultMarkGeocode: false,
+            position: 'topleft',
+            placeholder: 'Rechercher une adresse...'
+        })
+        .on('markgeocode', function(e: any) {
+            const bbox = e.geocode.bbox;
+            const poly = L.polygon([
+                bbox.getSouthEast(),
+                bbox.getNorthEast(),
+                bbox.getNorthWest(),
+                bbox.getSouthWest()
+            ]);
+            map.fitBounds(poly.getBounds());
+        })
+        .addTo(map);
     }
 
     private _addZoomControl(): void {

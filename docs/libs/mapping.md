@@ -27,6 +27,13 @@ Les librairies utilisées pour la gestion de la carte interactive et des donnée
 
 - **Lien** : [https://github.com/domoritz/leaflet-locatecontrol](https://github.com/domoritz/leaflet-locatecontrol)
 
+### leaflet-control-geocoder
+
+**Rôle** : Recherche d'adresses et de lieux.
+**Pourquoi** : Permet à l'utilisateur de taper une adresse ("Paris", "10 rue de la Paix") pour centrer la carte. Utilise par défaut le service open-source Nominatim.
+
+- **Lien** : [https://github.com/perliedman/leaflet-control-geocoder](https://github.com/perliedman/leaflet-control-geocoder)
+
 ## Sources de Données (IGN)
 
 ### Géoservices IGN
