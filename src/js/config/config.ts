@@ -42,7 +42,7 @@ export default class Config {
                         opacity: 0.8,
                         minZoom: 0,
                         maxZoom: 21,        // Zoom jusqu'à 21 (≈5m)
-                        maxNativeZoom: 17,  // Fige les tuiles du niveau 17 (≈300m) et les étire pour zoom supérieur
+                        maxNativeZoom: 11,  // On force l'utilisation des tuiles de niveau 11 pour tous les zooms supérieurs
                         tileSize: 256,
                         updateWhenIdle: false,
                         updateWhenZooming: true,
