@@ -1,205 +1,216 @@
-@use 'variables' as *;
+@use "variables" as *;
 
 /* === Responsive Design === */
 
 /* Tablets */
 @media screen and (max-width: $breakpoint-tablet) {
-    #sidebar {
-        width: 250px;
-    }
+  #sidebar {
+    width: 250px;
+  }
 
-    .ui.secondary.menu .header .content {
-        font-size: 1.1em;
-    }
+  .ui.secondary.menu .header .content {
+    font-size: 1.1em;
+  }
 }
 
 /* Mobile */
 @media screen and (max-width: $breakpoint-mobile) {
-    /* Masquer la sidebar desktop sur mobile */
-    #sidebar {
-        display: none !important;
+  /* Masquer la sidebar desktop sur mobile */
+  #sidebar {
+    display: none !important;
+  }
+
+  /* Pleine largeur pour la carte sur mobile */
+  #map-container {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+  }
+
+  /* Ajuster la taille du header sur mobile */
+  .ui.secondary.menu .header .content {
+    font-size: 1em;
+  }
+
+  .ui.secondary.menu .header .sub.header {
+    display: none;
+  }
+
+  /* Bouton toggle layers visible sur mobile */
+  #toggle-layers {
+    display: block !important;
+  }
+
+  /* Style du sidebar mobile */
+  .ui.sidebar {
+    width: 280px !important;
+    background-color: rgba(0, 0, 0, 0.95) !important;
+  }
+
+  /* Légende collapsible sur mobile */
+  .legend-toggle {
+    display: block !important;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    padding: 8px;
+
+    &.hidden {
+      display: none !important;
     }
+  }
 
-    /* Pleine largeur pour la carte sur mobile */
-    #map-container {
-        width: 100% !important;
-        flex: 0 0 100% !important;
+  .legend-content {
+    display: none;
+
+    &.show {
+      display: block;
     }
+  }
 
-    /* Ajuster la taille du header sur mobile */
-    .ui.secondary.menu .header .content {
-        font-size: 1em;
+  /* Contrôles sur mobile */
+  .leaflet-control-layers {
+    cursor: default;
+
+    &:hover {
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     }
+  }
 
-    .ui.secondary.menu .header .sub.header {
-        display: none;
+  .map-title-control {
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+
+  /* Dropdown personnalisé sur mobile */
+  .select-trigger {
+    width: 40px;
+    font-size: 13px;
+    padding: 6px 2px;
+
+    &:hover,
+    .custom-select.active & {
+      width: 140px;
+      padding: 6px 10px;
     }
+  }
 
-    /* Bouton toggle layers visible sur mobile */
-    #toggle-layers {
-        display: block !important;
+  .select-option {
+    font-size: 13px;
+    padding: 6px 10px;
+
+    .flag-icon {
+      width: 16px;
+      height: 16px;
+      margin-right: 6px;
     }
+  }
 
-    /* Style du sidebar mobile */
-    .ui.sidebar {
-        width: 280px !important;
-        background-color: rgba(0,0,0,0.95) !important;
+  /* Ensure Leaflet attribution is visible on mobile */
+  .leaflet-bottom {
+    bottom: 1px !important;
+    position: fixed !important;
+  }
+
+  .leaflet-control-attribution {
+    font-size: 10px !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    padding: 2px 5px !important;
+    margin-bottom: 5px !important;
+
+    /* Truncate long text on mobile to avoid covering the map bottom */
+    max-width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block; /* Required for max-width to work if it's inline */
+
+    a {
+      display: inline; /* Keep links inline */
     }
+  }
 
-    /* Légende collapsible sur mobile */
-    .legend-toggle {
-        display: block !important;
-        cursor: pointer;
-        background: rgba(255, 255, 255, 0.9);
-        border: none;
-        padding: 8px;
+  /* Basemap Switcher Mobile */
+  .leaflet-basemap-switcher {
+    padding: 4px;
+  }
 
-        &.hidden {
-            display: none !important;
-        }
-    }
+  .basemap-switcher-container {
+    min-width: auto;
+  }
 
-    .legend-content {
-        display: none;
+  /* Afficher le toggle sur mobile */
+  .basemap-toggle-link {
+    display: block !important;
+  }
 
-        &.show {
-            display: block;
-        }
-    }
+  /* Masquer les options par défaut sur mobile */
+  .basemap-options {
+    display: none;
+    gap: 8px;
+    position: absolute;
+    top: 0;
+    right: 45px;
+    background: white;
+    padding: 8px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+  }
 
-    /* Contrôles sur mobile */
-    .leaflet-control-layers {
-        cursor: default;
+  /* Afficher les options quand expanded */
+  .basemap-switcher-container.expanded .basemap-options {
+    display: flex;
+  }
 
-        &:hover {
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
-    }
+  .basemap-thumbnail {
+    width: 60px;
+    height: 60px;
+  }
 
-    .map-title-control {
-        font-size: 14px;
-        padding: 8px 12px;
-    }
-
-    /* Dropdown personnalisé sur mobile */
-    .select-trigger {
-        width: 40px;
-        font-size: 13px;
-        padding: 6px 2px;
-
-        &:hover,
-        .custom-select.active & {
-            width: 140px;
-            padding: 6px 10px;
-        }
-    }
-
-    .select-option {
-        font-size: 13px;
-        padding: 6px 10px;
-
-        .flag-icon {
-            width: 16px;
-            height: 16px;
-            margin-right: 6px;
-        }
-    }
-
-    /* Ensure Leaflet attribution is visible on mobile */
-    .leaflet-bottom {
-        bottom: 1px !important;
-        position: fixed !important;
-    }
-
-    .leaflet-control-attribution {
-        font-size: 10px !important;
-        background: rgba(255, 255, 255, 0.9) !important;
-        padding: 2px 5px !important;
-        margin-bottom: 5px !important;
-    }
-
-    /* Basemap Switcher Mobile */
-    .leaflet-basemap-switcher {
-        padding: 4px;
-    }
-
-    .basemap-switcher-container {
-        min-width: auto;
-    }
-
-    /* Afficher le toggle sur mobile */
-    .basemap-toggle-link {
-        display: block !important;
-    }
-
-    /* Masquer les options par défaut sur mobile */
-    .basemap-options {
-        display: none;
-        gap: 8px;
-        position: absolute;
-        top: 0;
-        right: 45px;
-        background: white;
-        padding: 8px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        z-index: 1000;
-    }
-
-    /* Afficher les options quand expanded */
-    .basemap-switcher-container.expanded .basemap-options {
-        display: flex;
-    }
-
-    .basemap-thumbnail {
-        width: 60px;
-        height: 60px;
-    }
-
-    .basemap-label {
-        font-size: 11px;
-    }
+  .basemap-label {
+    font-size: 11px;
+  }
 }
 
 /* Très petits écrans */
 @media screen and (max-width: 480px) {
-    .ui.secondary.menu {
-        height: 50px;
-    }
+  .ui.secondary.menu {
+    height: 50px;
+  }
 
-    #map-container {
-        height: calc(100vh - 50px);
-    }
+  #map-container {
+    height: calc(100vh - 50px);
+  }
 
-    .ui.secondary.menu .item {
-        padding: 0 0.5rem;
-    }
+  .ui.secondary.menu .item {
+    padding: 0 0.5rem;
+  }
 
-    .ui.button {
-        padding: 0.5rem 1rem;
-        font-size: 0.9em;
-    }
+  .ui.button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9em;
+  }
 }
 
 @media (min-width: 769px) {
-    .legend-toggle {
-        display: none !important;
-    }
+  .legend-toggle {
+    display: none !important;
+  }
 
-    .legend-content {
-        display: block !important;
-    }
+  .legend-content {
+    display: block !important;
+  }
 }
 
 /* Print styles */
 @media print {
-    #sidebar,
-    .ui.secondary.menu {
-        display: none !important;
-    }
+  #sidebar,
+  .ui.secondary.menu {
+    display: none !important;
+  }
 
-    #map-container {
-        width: 100% !important;
-        height: 100vh !important;
-    }
+  #map-container {
+    width: 100% !important;
+    height: 100vh !important;
+  }
 }

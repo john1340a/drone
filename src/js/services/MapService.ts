@@ -22,8 +22,14 @@ export default class MapService {
             zoom: config.zoom,
             minZoom: config.minZoom,
             maxZoom: config.maxZoom,
-            zoomControl: false // Désactiver le contrôle par défaut pour le repositionner
+            zoomControl: false, // Désactiver le contrôle par défaut pour le repositionner
+            attributionControl: false // On le recrée manuellement pour enlever le préfixe
         });
+
+        // Ajouter l'attribution sans le préfixe "Leaflet" pour gagner de la place sur mobile
+        L.control.attribution({
+            prefix: false
+        }).addTo(this.map);
 
         // Créer un pane personnalisé pour les overlays (au-dessus des basemaps)
         this.map.createPane('overlayPane');

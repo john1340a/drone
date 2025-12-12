@@ -42,13 +42,13 @@ test.describe('Map Application', () => {
         const attribution = page.locator('.leaflet-control-attribution');
         await expect(attribution).toBeVisible();
         
-        // CSS Check for our fix
-        const bottom = await attribution.evaluate((el) => {
-            return window.getComputedStyle(el.closest('.leaflet-bottom')!).bottom;
-        });
+        // Check CSS Fix
+        await expect(attribution).toHaveCSS('max-width', '250px');
+        await expect(attribution).toHaveCSS('text-overflow', 'ellipsis');
+        await expect(attribution).toHaveCSS('white-space', 'nowrap');
         
-        // It should not be 0px
-        expect(bottom).not.toBe('0px');
+        // Check Prefix Removal
+        await expect(attribution).not.toContainText('Leaflet');
     }
   });
 
