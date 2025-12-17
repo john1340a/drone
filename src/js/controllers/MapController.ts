@@ -8,6 +8,8 @@ import * as LocateControlModule from 'leaflet.locatecontrol';
 import 'leaflet.locatecontrol/dist/L.Control.Locate.min.css';
 import 'leaflet-control-geocoder';
 import 'leaflet-control-geocoder/dist/Control.Geocoder.css';
+import 'leaflet-velocity';
+import 'leaflet-velocity/dist/leaflet-velocity.css';
 
 // Manual registration attempt 3
 // @ts-ignore
@@ -33,6 +35,7 @@ if (LocateControlModule) {
 import MapService from '../services/MapService';
 import LayerService from '../services/LayerService';
 import Config from '../config/config';
+import WeatherService from '../services/WeatherService';
 import BasemapSwitcher from '../controls/BasemapSwitcher';
 
 declare const lucide: any;
@@ -40,12 +43,14 @@ declare const lucide: any;
 declare global {
     interface Window {
         toggleLegend?: () => void;
+        analyticsService?: any;
     }
 }
 
 export default class MapController {
     private mapService: MapService;
     private layerService: LayerService;
+    private weatherService: WeatherService;
     private isInitialized: boolean;
     private basemapSwitcher: BasemapSwitcher | null;
     private layerControl: L.Control.Layers | null;
@@ -55,6 +60,7 @@ export default class MapController {
     constructor() {
         this.mapService = new MapService();
         this.layerService = new LayerService();
+        this.weatherService = new WeatherService();
         this.isInitialized = false;
         this.basemapSwitcher = null;
         this.layerControl = null;
@@ -207,6 +213,172 @@ export default class MapController {
         this._addLocateControl();
         this._addDomTomGeocoder();
         this._addSearchControl();
+        this._addWeatherWidget();
+    }
+
+    private _addWeatherWidget(): void {
+        const map = this.mapService.getMap();
+        if (!map) return;
+
+        const startCenter = map.getCenter();
+        
+        // Custom Control
+        const weatherControl = new L.Control({ position: 'topright' });
+
+        weatherControl.onAdd = () => {
+            const container = L.DomUtil.create('div', 'weather-widget');
+            container.innerHTML = `
+                <div class="weather-icon-container">
+                    <i data-lucide="wind" class="weather-icon"></i>
+                </div>
+                <div class="weather-info">
+                    <span class="weather-label">Vent</span>
+                    <div class="weather-value">
+                        <span id="wind-speed">--</span> <span>km/h</span>
+                    </div>
+                </div>
+                <div class="wind-direction" id="wind-direction-arrow">
+                    <i data-lucide="navigation" style="width: 20px; height: 20px;"></i>
+                </div>
+            `;
+            
+            // Prevent map interaction when clicking the widget
+            L.DomEvent.disableClickPropagation(container);
+            return container;
+        };
+
+        weatherControl.addTo(map);
+
+        // Initial Fetch
+        this._updateWeather(startCenter.lat, startCenter.lng);
+        // Initialize Layer ONCE for fluidity
+        this._initWindLayer(startCenter.lat, startCenter.lng);
+
+        // Update on move (debounced) - Widget ONLY
+        let timeout: any;
+        map.on('moveend', () => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                const center = map.getCenter();
+                this._updateWeather(center.lat, center.lng);
+            }, 1000);
+        });
+    }
+
+    private async _updateWeather(lat: number, lng: number): Promise<void> {
+        try {
+            const data = await this.weatherService.getCurrentWind(lat, lng);
+            
+            const widget = document.querySelector('.weather-widget');
+            const speedEl = document.getElementById('wind-speed');
+            const arrowEl = document.getElementById('wind-direction-arrow');
+
+            if (widget && speedEl && arrowEl) {
+                // Update Value
+                speedEl.textContent = Math.round(data.windSpeed).toString();
+
+                // Update Direction Rotation
+                // OpenMeteo gives direction in degrees (0 = North, 90 = East)
+                // The icon (navigation) usually points Up (North). So we rotate it by the degrees.
+                arrowEl.style.transform = `rotate(${data.windDirection}deg)`;
+
+                // Update Safety Status
+                widget.classList.remove('safe', 'warning', 'danger');
+                if (data.isSafe) {
+                    widget.classList.add('safe');
+                } else if (data.windGusts > 50) {
+                     widget.classList.add('danger');
+                } else {
+                     widget.classList.add('warning');
+                }
+                
+                // Refresh icons in case of dynamic update
+                // Refresh icons in case of dynamic update
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+
+                // Note: We do NOT update the wind layer here to maintain fluidity.
+                const map = this.mapService.getMap();
+                if (map && this._lastWindGridCenter) {
+                     const currentCenter = L.latLng(lat, lng);
+                     const dist = map.distance(this._lastWindGridCenter, currentCenter);
+                     if (dist > 500000) { // 500km threshold
+                         this._initWindLayer(lat, lng);
+                     }
+                }
+            }
+        } catch (error) {
+            console.warn('Weather update failed', error);
+        }
+    }
+
+    private _windLayer: any = null;
+    private _lastWindGridCenter: L.LatLng | null = null;
+
+    /**
+     * Initializes the visual wind layer with a static "Regional" field.
+     * We do NOT update this on move/zoom to ensure 60fps fluidity (Canvas panning).
+     * We creates a massive grid (France-wide) based on the initial fetch.
+     */
+    private async _initWindLayer(lat: number, lng: number): Promise<void> {
+        const map = this.mapService.getMap();
+        if (!map) return;
+        
+        this._lastWindGridCenter = L.latLng(lat, lng);
+        
+        // Use existing state to check visibility before removal
+        const isLayerActive = this._windLayer && map.hasLayer(this._windLayer);
+
+        // CLEANUP: Remove strict reference to existing layer from map AND control
+        if (this._windLayer) {
+            map.removeLayer(this._windLayer);
+            if (this.layerControl) {
+                this.layerControl.removeLayer(this._windLayer);
+            }
+            this._windLayer = null;
+        }
+
+        try {
+            // Get initial condition for the field generation
+            const data = await this.weatherService.getCurrentWind(lat, lng);
+            
+            // Generate a huge field (covering +/- 10 degrees) to allow panning without regeneration
+            // This is a "Visual Approximation" for the 'Wow' effect.
+            const windField = this.weatherService.generateWindField(lat, lng, data.windSpeed, data.windDirection);
+
+            // @ts-ignore
+            this._windLayer = L.velocityLayer({
+                displayValues: false,
+                displayOptions: {
+                    velocityType: 'Vent Global',
+                    position: 'bottomleft',
+                    emptyString: 'Pas de données de vent',
+                    angleConvention: 'bearingCW',
+                    displayPosition: 'bottomleft',
+                    displayEmptyString: 'No wind data',
+                    speedUnit: 'km/h'
+                },
+                data: windField,
+                maxVelocity: 40,
+                velocityScale: 0.01 // Fine tune for visuals
+            });
+
+            if (this.layerControl) {
+                this.layerControl.addOverlay(this._windLayer, "Météo (Vent Animé)");
+            }
+
+            // Persistence: If it was active, add the new one back to the map
+            // If it's the very first init (isLayerActive false), we don't auto-add it (user must toggle)
+            // UNLESS the user wants it by default? In step 1475/1449 user implied "je dois l'activer".
+            // So default is off. But if I switch territory, I want it to STAY on if it was on.
+            if (isLayerActive) {
+                this._windLayer.addTo(map);
+            }
+
+        } catch (e) {
+            console.warn('Failed to init wind visuals', e);
+        }
     }
 
     private _addSearchControl(): void {

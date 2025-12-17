@@ -34,6 +34,18 @@ Les librairies utilisées pour la gestion de la carte interactive et des donnée
 
 - **Lien** : [https://github.com/perliedman/leaflet-control-geocoder](https://github.com/perliedman/leaflet-control-geocoder)
 
+## Services Externes
+
+### OpenMeteo (Météo & Vent)
+
+**Rôle** : Fournir les données météorologiques en temps réel.
+**Utilisation** :
+
+- Récupération du vent (vitesse à 10m, rafales, direction).
+- Affichage dans un widget UI "Glassmorphism".
+- Code couleur de sécurité (Vert/Orange/Rouge) pour le pilotage de drone.
+- **URL API** : `https://api.open-meteo.com/v1/forecast`
+
 ## Sources de Données (IGN)
 
 ### Géoservices IGN

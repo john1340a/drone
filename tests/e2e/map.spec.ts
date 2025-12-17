@@ -17,24 +17,19 @@ test.describe('Map Application', () => {
   });
 
   test('should show basemap switcher interactions', async ({ page }) => {
-    // Check if toggle button exists
-    const toggle = page.locator('.basemap-toggle-link');
+    // Check if toggle button exists (New Single Toggle Style)
+    const toggleBtn = page.locator('.basemap-toggle-btn');
+    await expect(toggleBtn).toBeVisible();
     
-    // On mobile, the switcher might be collapsed
-    if (await toggle.isVisible()) {
-        await toggle.click();
-    }
+    // Initial state: default map is OSM, so the button should suggest 'Satellite'
+    const img = toggleBtn.locator('img');
+    await expect(img).toHaveAttribute('src', /satellite/); // Should show satellite thumb
 
-    const osmOption = page.locator('[data-basemap="osm"]');
-    const satelliteOption = page.locator('[data-basemap="satellite"]');
+    // Click to switch
+    await toggleBtn.click();
 
-    await expect(osmOption).toBeVisible();
-    await expect(satelliteOption).toBeVisible();
-
-    // Switch to satellite
-    await satelliteOption.click();
-    await expect(satelliteOption).toHaveClass(/active/);
-    await expect(osmOption).not.toHaveClass(/active/);
+    // After click: Should suggest 'OSM' because map is now satellite
+    await expect(img).toHaveAttribute('src', /osm/);
   });
 
   test('should have attribution visible on mobile', async ({ page, isMobile }) => {
@@ -103,6 +98,34 @@ test.describe('Map Application', () => {
     const input = geocoder.locator('input');
     await expect(input).toBeVisible();
     await expect(input).toHaveAttribute('placeholder', 'Rechercher une adresse...');
+  });
+
+  test('should load weather widget and display data', async ({ page }) => {
+    // Mock the OpenMeteo API call
+    await page.route('**/api.open-meteo.com/v1/forecast*', async route => {
+        const json = {
+            current: {
+                wind_speed_10m: 15.5,
+                wind_direction_10m: 180,
+                wind_gusts_10m: 25
+            }
+        };
+        await route.fulfill({ json });
+    });
+
+    // Reload page to trigger the mocked fetch on init
+    await page.reload();
+
+    // Check widget presence
+    const widget = page.locator('.weather-widget');
+    await expect(widget).toBeVisible();
+
+    // Check values
+    const speed = widget.locator('#wind-speed');
+    await expect(speed).toHaveText('16'); // 15.5 rounded
+
+    // Check safety class (Safe < 30)
+    await expect(widget).toHaveClass(/safe/);
   });
 
 });

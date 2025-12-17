@@ -53,65 +53,31 @@ export default class BasemapSwitcher {
     }
 
     private _getHTML(): string {
-        // Note: src path should be resolved correctly by Vite if assets are in public or imported
-        // Ideally we should import images, but sticking to paths for now.
+        const nextBasemap = this.currentBasemap === 'osm' ? 'satellite' : 'osm';
+        const imageSrc = nextBasemap === 'satellite' ? satelliteImage : osmImage;
+        
         return `
-            <div class="basemap-switcher-container">
-                <a class="basemap-toggle-link leaflet-basemap-toggle" href="#" title="Fonds de carte">
-                    <span class="basemap-toggle-icon"></span>
-                </a>
-                <div class="basemap-options">
-                    <div class="basemap-option ${this.currentBasemap === 'osm' ? 'active' : ''}"
-                         data-basemap="osm">
-                        <img src="${osmImage}" alt="OSM" class="basemap-thumbnail" />
-                        <div class="basemap-label">OSM</div>
-                    </div>
-                    <div class="basemap-option ${this.currentBasemap === 'satellite' ? 'active' : ''}"
-                         data-basemap="satellite">
-                        <img src="${satelliteImage}" alt="Satellite" class="basemap-thumbnail" />
-                        <div class="basemap-label">Satellite</div>
-                    </div>
-                </div>
+            <div class="basemap-switcher-container single-toggle">
+                <button class="basemap-toggle-btn" title="Changer de fond de carte">
+                    <img src="${imageSrc}" alt="Switch Basemap" class="basemap-thumbnail" />
+                </button>
             </div>
         `;
-        // WARNING: src/assets/images path might break in production build if not handled by Vite/public folder. 
-        // Vite handles paths relative to root in dev, but in build it expects imports or public dir.
-        // Assuming assets are in public/ or src/assets and accessed via URL.
     }
 
     private _attachEvents(container: HTMLElement): void {
-        const options = container.querySelectorAll('.basemap-option');
-        const toggleLink = container.querySelector('.basemap-toggle-link') as HTMLElement;
-        const basemapContainer = container.querySelector('.basemap-switcher-container');
-
-        // Gérer les clics sur les options de basemap
-        options.forEach(option => {
-            option.addEventListener('click', (e) => {
+        const btn = container.querySelector('.basemap-toggle-btn');
+        if (btn) {
+            btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const basemapKey = option.getAttribute('data-basemap');
-                if (basemapKey) {
-                    this._switchBasemap(basemapKey, container);
-                }
-
-                // Sur mobile, fermer après sélection
-                if (this._isMobile() && basemapContainer) {
-                    basemapContainer.classList.remove('expanded');
-                }
-            });
-        });
-
-        // Gérer le toggle sur mobile uniquement
-        if (toggleLink && this._isMobile() && basemapContainer) {
-            toggleLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                basemapContainer.classList.toggle('expanded');
+                this._toggleBasemap(container);
             });
         }
     }
 
-    private _isMobile(): boolean {
-        return window.innerWidth <= 768;
+    private _toggleBasemap(container: HTMLElement): void {
+        const nextBasemap = this.currentBasemap === 'osm' ? 'satellite' : 'osm';
+        this._switchBasemap(nextBasemap, container);
     }
 
     private _switchBasemap(basemapKey: string, container: HTMLElement): void {
@@ -133,14 +99,12 @@ export default class BasemapSwitcher {
             });
         }
 
-        // Mettre à jour l'UI
-        const options = container.querySelectorAll('.basemap-option');
-        options.forEach(opt => {
-            opt.classList.remove('active');
-            if (opt.getAttribute('data-basemap') === basemapKey) {
-                opt.classList.add('active');
-            }
-        });
+        // Update Button Image
+        const img = container.querySelector('.basemap-thumbnail') as HTMLImageElement;
+        if (img) {
+            const nextBasemap = this.currentBasemap === 'osm' ? 'satellite' : 'osm';
+            img.src = nextBasemap === 'satellite' ? satelliteImage : osmImage;
+        }
 
         // Track avec analytics si disponible
         if (window.analyticsService) {
