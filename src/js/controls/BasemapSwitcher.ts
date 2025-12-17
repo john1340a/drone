@@ -30,7 +30,7 @@ export default class BasemapSwitcher {
             },
 
             onAdd: (_map: L.Map) => {
-                const container = L.DomUtil.create('div', 'leaflet-basemap-switcher leaflet-bar leaflet-control');
+                const container = L.DomUtil.create('div', 'leaflet-basemap-switcher leaflet-control');
 
                 // Empêcher la propagation des événements de la carte
                 L.DomEvent.disableClickPropagation(container);

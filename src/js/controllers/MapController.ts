@@ -365,7 +365,7 @@ export default class MapController {
             });
 
             if (this.layerControl) {
-                this.layerControl.addOverlay(this._windLayer, "Météo (Vent Animé)");
+                this.layerControl.addOverlay(this._windLayer, "Météo");
             }
 
             // Persistence: If it was active, add the new one back to the map
