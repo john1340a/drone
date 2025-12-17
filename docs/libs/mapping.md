@@ -34,6 +34,17 @@ Les librairies utilisées pour la gestion de la carte interactive et des donnée
 
 - **Lien** : [https://github.com/perliedman/leaflet-control-geocoder](https://github.com/perliedman/leaflet-control-geocoder)
 
+### leaflet-velocity
+
+**Rôle** : Visualisation animée des particules de vent.
+**Pourquoi** : Ajoute une dimension visuelle immersive ("Wow effect") pour comprendre le flux d'air.
+**Fonctionnement** :
+
+- Le plugin attend un champ vectoriel (U/V components).
+- Nous générons ce champ localement (Smart Mock) via `WeatherService` à partir des données ponctuelles d'OpenMeteo, pour garantir la fluidité sans dépendre d'un lourd backend GRIB.
+
+- **Lien** : [https://github.com/onaci/leaflet-velocity](https://github.com/onaci/leaflet-velocity)
+
 ## Services Externes
 
 ### OpenMeteo (Météo & Vent)
@@ -41,9 +52,9 @@ Les librairies utilisées pour la gestion de la carte interactive et des donnée
 **Rôle** : Fournir les données météorologiques en temps réel.
 **Utilisation** :
 
-- Récupération du vent (vitesse à 10m, rafales, direction).
-- Affichage dans un widget UI "Glassmorphism".
-- Code couleur de sécurité (Vert/Orange/Rouge) pour le pilotage de drone.
+- Retrieves wind data (Speed 10m, Gusts, Direction).
+- **Widget UI** : Affichage précis des valeurs et status de sécurité.
+- **Velocity Layer** : Sert de "seed" pour générer le champ d'animation des vents.
 - **URL API** : `https://api.open-meteo.com/v1/forecast`
 
 ## Sources de Données (IGN)
