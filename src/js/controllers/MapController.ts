@@ -238,7 +238,9 @@ export default class MapController {
                     </div>
                 </div>
                 <div class="wind-direction" id="wind-direction-arrow">
-                    <i data-lucide="navigation" style="width: 20px; height: 20px;"></i>
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="wind-arrow-icon">
+                        <polygon points="12 2 19 21 12 17 5 21 12 2"></polygon>
+                    </svg>
                 </div>
             `;
             
@@ -279,8 +281,10 @@ export default class MapController {
 
                 // Update Direction Rotation
                 // OpenMeteo gives direction in degrees (0 = North, 90 = East)
-                // The icon (navigation) usually points Up (North). So we rotate it by the degrees.
-                arrowEl.style.transform = `rotate(${data.windDirection}deg)`;
+                // The icon (navigation) usually points Up (North).
+                // We rotate it by direction + 180 to point IN THE DIRECTION OF FLOW (Destination),
+                // matching the particle layer movement, instead of pointing into the wind (Source).
+                arrowEl.style.transform = `rotate(${data.windDirection + 180}deg)`;
 
                 // Update Safety Status
                 widget.classList.remove('safe', 'warning', 'danger');

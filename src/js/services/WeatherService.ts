@@ -68,7 +68,7 @@ export default class WeatherService {
         const vData = new Array(nx * ny);
         
         for (let i = 0; i < uData.length; i++) {
-            const noise = (Math.random() - 0.5) * 2; // +/- 1 m/s
+            const noise = (Math.random() - 0.5) * 0.4; // +/- 0.2 m/s (Reduced for better precision)
             uData[i] = u + noise;
             vData[i] = v + noise;
         }
