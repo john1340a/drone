@@ -15,7 +15,7 @@ export default class Config {
                     name: 'OpenStreetMap',
                     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                     options: {
-                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
                         maxZoom: 21,        // Permettre zoom jusqu'à 21
                         maxNativeZoom: 19   // OSM fournit des tuiles jusqu'à 19, oversampling au-delà
                     }

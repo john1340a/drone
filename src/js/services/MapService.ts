@@ -27,9 +27,11 @@ export default class MapService {
         });
 
         // Ajouter l'attribution sans le préfixe "Leaflet" pour gagner de la place sur mobile
-        L.control.attribution({
+        const attributionControl = L.control.attribution({
             prefix: false
         }).addTo(this.map);
+
+        attributionControl.addAttribution('&copy; <a href="https://open-meteo.com/" target="_blank">Open-Meteo</a>');
 
         // Créer un pane personnalisé pour les overlays (au-dessus des basemaps)
         this.map.createPane('overlayPane');
