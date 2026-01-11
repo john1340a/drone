@@ -36,6 +36,7 @@ import MapService from '../services/MapService';
 import LayerService from '../services/LayerService';
 import Config from '../config/config';
 import WeatherService from '../services/WeatherService';
+import RestrictionInfoService from '../services/RestrictionInfoService';
 import BasemapSwitcher from '../controls/BasemapSwitcher';
 
 declare const lucide: any;
@@ -56,6 +57,7 @@ export default class MapController {
     private layerControl: L.Control.Layers | null;
     private miniMap: any;
     private currentMiniMapLayer: L.Layer | null;
+    private restrictionInfoService: RestrictionInfoService;
 
     constructor() {
         this.mapService = new MapService();
@@ -66,6 +68,7 @@ export default class MapController {
         this.layerControl = null;
         this.miniMap = null;
         this.currentMiniMapLayer = null;
+        this.restrictionInfoService = new RestrictionInfoService();
     }
 
     initialize(): void {
@@ -119,6 +122,7 @@ export default class MapController {
     private _setupEventListeners(): void {
         this._setupResponsiveEvents();
         this._setupLayerControl();
+        this._setupRestrictionClickHandler();
     }
 
     private _setupLayerControl(): void {
@@ -197,6 +201,82 @@ export default class MapController {
     private _setupResponsiveEvents(): void {
         window.addEventListener('resize', () => {
             this._handleResize();
+        });
+    }
+
+    /**
+     * Setup click handler for restriction zone info popups.
+     */
+    private _setupRestrictionClickHandler(): void {
+        const map = this.mapService.getMap();
+        if (!map) return;
+
+        map.on('click', async (e: L.LeafletMouseEvent) => {
+            const { lat, lng } = e.latlng;
+            const zoom = map.getZoom();
+
+            // Only query if zoom is high enough for meaningful detail
+            if (zoom < 8) return;
+
+            try {
+                const info = await this.restrictionInfoService.getFeatureInfo(lat, lng, zoom, map);
+
+                if (!info) {
+                    return; // No restriction at this location
+                }
+
+                // Map color to CSS class
+                const colorClass = info.color.toLowerCase().replace('_', '-');
+                
+                // Build height display
+                let heightHtml = '';
+                if (info.maxHeight !== null) {
+                    heightHtml = `
+                        <div class="restriction-row">
+                            <span class="restriction-label">Hauteur max:</span>
+                            <span class="restriction-value">${info.maxHeight}m</span>
+                        </div>
+                    `;
+                } else {
+                    heightHtml = `
+                        <div class="restriction-row forbidden">
+                            <span class="restriction-value">⛔ Vol interdit</span>
+                        </div>
+                    `;
+                }
+
+                const content = `
+                    <div class="restriction-popup ${colorClass}">
+                        <div class="restriction-header">
+                            <span class="restriction-title">🚁 Zone Réglementée</span>
+                        </div>
+                        <div class="restriction-body">
+                            <div class="restriction-row">
+                                <span class="restriction-label">Restriction:</span>
+                                <span class="restriction-value">${info.description.replace(' *', '')}</span>
+                            </div>
+                            ${heightHtml}
+                            <div class="restriction-footer">
+                                <small>📜 ${info.legislation}</small>
+                            </div>
+                        </div>
+                        <a href="https://www.ecologie.gouv.fr/politiques-publiques/guides-exploitants-daeronefs" 
+                           target="_blank" 
+                           rel="noopener" 
+                           class="restriction-link">
+                            📖 Guides exploitants DGAC →
+                        </a>
+                    </div>
+                `;
+
+                L.popup({ className: 'restriction-popup-container' })
+                    .setLatLng(e.latlng)
+                    .setContent(content)
+                    .openOn(map);
+
+            } catch (error) {
+                console.warn('Failed to get restriction info:', error);
+            }
         });
     }
 
