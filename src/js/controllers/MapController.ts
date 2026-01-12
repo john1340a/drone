@@ -228,13 +228,13 @@ export default class MapController {
                 // Map color to CSS class
                 const colorClass = info.color.toLowerCase().replace('_', '-');
                 
-                // Build height display
+                // Build height display - show IGN data as indicative only
                 let heightHtml = '';
                 if (info.maxHeight !== null) {
                     heightHtml = `
                         <div class="restriction-row">
-                            <span class="restriction-label">Hauteur max:</span>
-                            <span class="restriction-value">${info.maxHeight}m</span>
+                            <span class="restriction-label">Donnée IGN:</span>
+                            <span class="restriction-value">${info.maxHeight}m (indicatif)</span>
                         </div>
                     `;
                 } else {
@@ -252,10 +252,13 @@ export default class MapController {
                         </div>
                         <div class="restriction-body">
                             <div class="restriction-row">
-                                <span class="restriction-label">Restriction:</span>
+                                <span class="restriction-label">Zone:</span>
                                 <span class="restriction-value">${info.description.replace(' *', '')}</span>
                             </div>
                             ${heightHtml}
+                            <div class="restriction-warning">
+                                <small>⚠️ Valeur indicative. Vérifiez les conditions réelles avant tout vol.</small>
+                            </div>
                             <div class="restriction-footer">
                                 <small>📜 ${info.legislation}</small>
                             </div>
