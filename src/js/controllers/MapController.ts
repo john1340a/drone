@@ -248,7 +248,7 @@ export default class MapController {
                 const content = `
                     <div class="restriction-popup ${colorClass}">
                         <div class="restriction-header">
-                            <span class="restriction-title">🚁 Zone Réglementée</span>
+:                             <span class="restriction-title">🚁 Restriction UAS</span>
                         </div>
                         <div class="restriction-body">
                             <div class="restriction-row">

@@ -96,7 +96,9 @@ export default class RestrictionInfoService {
         let color = 'UNKNOWN';
         let maxHeight: number | null = null;
         let description = props.limite || 'Zone soumise à restrictions';
-        let zoneType = 'Zone de restriction';
+        // Note: L'API IGN ne fournit pas le type exact de zone (CTR, Zone P/D/R, parc naturel, etc.)
+        // On laisse vide plutôt que d'afficher un terme incorrect
+        let zoneType = '';
 
         // Parse the "limite" field
         if (limite.includes('vol interdit')) {
