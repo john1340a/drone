@@ -130,6 +130,18 @@ export default class MapController {
         const map = this.mapService.getMap();
         if (!map) return;
 
+        // Custom Panes for Strict Ordering
+        // Create only if they don't exist to avoid errors on potential re-runs
+        if (!map.getPane('allowedPane')) {
+            map.createPane('allowedPane');
+            map.getPane('allowedPane')!.style.zIndex = '400';
+        }
+        
+        if (!map.getPane('restrictionPane')) {
+            map.createPane('restrictionPane');
+            map.getPane('restrictionPane')!.style.zIndex = '450';
+        }
+
         // Créer le sélecteur visuel de fond de carte (topright)
         const baseMapsConfig = Config.LAYERS_CONFIG.baseMaps;
         const baseMaps: Record<string, L.TileLayer> = {};

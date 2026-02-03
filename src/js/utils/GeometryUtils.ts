@@ -12,7 +12,7 @@ export class GeometryUtils {
         // Polygon coordinates: [ [ [x,y], [x,y] ], [hole] ]
         // We mainly check the outer ring [0].
         
-        const x = point[0], y = point[1];
+        // const x = point[0], y = point[1];
         let inside = false;
         
         // Iterate over rings (usually first ring is outer, others are holes)

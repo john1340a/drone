@@ -1,5 +1,6 @@
 import L from 'leaflet';
-import Config from '../config/config';
+// Config unused
+// import Config from '../config/config';
 
 export default class LayerService {
 
@@ -70,7 +71,7 @@ export default class LayerService {
         }
     }
 
-    async loadDroneRestrictionsLayer(): Promise<L.GeoJSON> {
+    async loadDroneRestrictionsLayer(options: L.GeoJSONOptions = {}): Promise<L.GeoJSON> {
         // Load local GeoJSON instead of IGN WMTS
         // Use import.meta.env.BASE_URL to handle the /drone/ base path
         const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
@@ -81,10 +82,10 @@ export default class LayerService {
         }
         const data = await response.json();
 
-        return this.createStyledGeoJSONLayer(data);
+        return this.createStyledGeoJSONLayer(data, options);
     }
 
-    async loadAllowedZonesLayer(): Promise<L.GeoJSON> {
+    async loadAllowedZonesLayer(options: L.GeoJSONOptions = {}): Promise<L.GeoJSON> {
         const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
         // Add cache buster to ensure checking for new file updates (e.g. from QGIS export)
         const response = await fetch(`${baseUrl}data/allowed_zones.geojson?v=${Date.now()}`);
@@ -95,6 +96,7 @@ export default class LayerService {
 
         // Create a green layer for allowed zones
         return L.geoJSON(data, {
+            ...options,
             style: () => ({
                 color: '#21ba45',
                 fillColor: '#21ba45',
@@ -102,8 +104,8 @@ export default class LayerService {
                 opacity: 0.6,
                 fillOpacity: 0.15
             }),
-            onEachFeature: (feature, layer) => {
-                const props = feature.properties as any;
+            onEachFeature: (_feature, layer) => {
+                // const props = feature.properties as any;
                 const popupContent = `
                     <div class="restriction-popup" style="min-width: 200px;">
                         <div class="restriction-header" style="background: #21ba45; color: white; padding: 8px; border-radius: 4px 4px 0 0; font-weight: bold; display: flex; align-items: center;">
