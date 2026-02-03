@@ -65,7 +65,7 @@ Les librairies utilisées pour la gestion de la carte interactive et des donnée
 
 1.  **WMS (Web Map Service)** : Utilisé pour les orthophotos et cartes scannées.
     - _URL_ : `https://wxs.ign.fr/essentiels/geoportail/r/wms`
-2.  **WMTS (Web Map Tile Service)** : Utilisé pour la couche de restriction drone (TRANSPORTS.DRONES.RESTRICTIONS).
-    - _Pourquoi_ : Plus performant que le WMS (tuilé et caché), permet une fluidité maximale.
+2.  **GeoJSON Local** : Utilisé pour la couche de restriction drone (`restrictions.geojson`) et les zones autorisées (`allowed_zones.geojson`).
+    - _Pourquoi_ : Permet une fiabilité totale (pas de dépendance API externe instable), un fonctionnement hors-ligne, et un post-traitement client (couleurs, popups, zones vertes) impossible avec des tuiles raster WMTS.
 
 - **Documentation** : [https://geoservices.ign.fr/](https://geoservices.ign.fr/)

@@ -9,123 +9,93 @@ export interface RestrictionInfo {
     legislation: string;     // e.g. "Arrêté Espace 2020"
 }
 
+import { GeometryUtils } from '../utils/GeometryUtils';
+
 export default class RestrictionInfoService {
-    private static readonly WMTS_BASE = 'https://data.geopf.fr/wmts';
-    private static readonly LAYER = 'TRANSPORTS.DRONES.RESTRICTIONS';
-    private static readonly STYLE = 'normal';
-    private static readonly TILE_MATRIX_SET = 'PM';
 
     /**
-     * Query the IGN WMTS GetFeatureInfo endpoint.
-     * @param lat Latitude of the click
-     * @param lng Longitude of the click
-     * @param zoom Current map zoom level
-     * @param map Leaflet map instance (needed for coordinate conversion)
+     * Client-side lookup for drone restrictions.
+     * @param lat Latitude
+     * @param lng Longitude
+     * @param layer The Leaflet GeoJSON layer containing the data
      */
-    async getFeatureInfo(
-        lat: number,
-        lng: number,
-        zoom: number,
-        map: L.Map
-    ): Promise<RestrictionInfo | null> {
-        try {
-            // Convert lat/lng to tile coordinates
-            const tileSize = 256;
-            const point = map.project([lat, lng], zoom);
-            const tileX = Math.floor(point.x / tileSize);
-            const tileY = Math.floor(point.y / tileSize);
+    getRestrictionInfo(lat: number, lng: number, layer: L.GeoJSON): RestrictionInfo | null {
+        // Identify features at the clicked location
+        const foundFeatures: any[] = [];
+        
+        layer.eachLayer((l: any) => {
+            const feature = l.feature;
+            const geometry = feature.geometry;
             
-            // Pixel within the tile
-            const i = Math.floor(point.x % tileSize);
-            const j = Math.floor(point.y % tileSize);
-
-            // Build GetFeatureInfo URL
-            const url = new URL(RestrictionInfoService.WMTS_BASE);
-            url.searchParams.set('SERVICE', 'WMTS');
-            url.searchParams.set('REQUEST', 'GetFeatureInfo');
-            url.searchParams.set('VERSION', '1.0.0');
-            url.searchParams.set('LAYER', RestrictionInfoService.LAYER);
-            url.searchParams.set('STYLE', RestrictionInfoService.STYLE);
-            url.searchParams.set('FORMAT', 'image/png');
-            url.searchParams.set('TILEMATRIXSET', RestrictionInfoService.TILE_MATRIX_SET);
-            url.searchParams.set('TILEMATRIX', zoom.toString());
-            url.searchParams.set('TILEROW', tileY.toString());
-            url.searchParams.set('TILECOL', tileX.toString());
-            url.searchParams.set('I', i.toString());
-            url.searchParams.set('J', j.toString());
-            url.searchParams.set('INFOFORMAT', 'application/json');
-
-            const response = await fetch(url.toString());
-            
-            if (!response.ok) {
-                console.warn('GetFeatureInfo request failed:', response.statusText);
-                return null;
+            let isInside = false;
+            if (geometry.type === 'Polygon') {
+                isInside = GeometryUtils.isPointInPolygon([lng, lat], geometry.coordinates);
+            } else if (geometry.type === 'MultiPolygon') {
+                isInside = GeometryUtils.isPointInMultiPolygon([lng, lat], geometry.coordinates);
             }
 
-            const data = await response.json();
+            if (isInside) {
+                foundFeatures.push(feature);
+            }
+        });
+
+        if (foundFeatures.length > 0) {
+            // If multiple restrictions overlap, we could prioritise them.
+            // For now, take the most restrictive one or the first one.
+            // IGN logic: lowest max height or "Interdit".
             
-            // Parse the response (structure depends on IGN's API)
-            return this._parseResponse(data);
-        } catch (error) {
-            console.warn('Failed to get feature info:', error);
-            return null;
+            // Sort by severity (approximate)
+            foundFeatures.sort((a, b) => {
+                const hA = this._extractHeight(a.properties.limite);
+                const hB = this._extractHeight(b.properties.limite);
+                const valA = hA === null ? -1 : hA; // -1 for Forbidden (most severe)
+                const valB = hB === null ? -1 : hB;
+                return valA - valB; // Ascending height (Forbidden first)
+            });
+
+            return this._parseFeature(foundFeatures[0]);
         }
+
+        // NO RESTRICTION FOUND -> ALLOWED ZONE
+        return {
+             color: 'GREEN',
+             maxHeight: 120,
+             zoneType: 'Zone Ouverte',
+             description: 'Pas de restriction spécifique détectée pour la catégorie Ouverte.',
+             legislation: 'Réglementation Générale Catégorie Ouverte (120m max)'
+        };
     }
 
-    /**
-     * Parse the GetFeatureInfo JSON response into a RestrictionInfo object.
-     */
-    private _parseResponse(data: any): RestrictionInfo | null {
-        // IGN returns features array
-        if (!data.features || data.features.length === 0) {
-            return null; // No restriction at this location
-        }
+    private _extractHeight(limite: string): number | null {
+        if (!limite) return 120; // Default if missing?
+        const lower = limite.toLowerCase();
+        if (lower.includes('interdit')) return null;
+        const match = lower.match(/(\d+)\s*m/);
+        return match ? parseInt(match[1], 10) : 120;
+    }
 
-        const feature = data.features[0];
+    private _parseFeature(feature: any): RestrictionInfo {
         const props = feature.properties || {};
-
-        // The main property is "limite" which contains text like:
-        // - "Vol interdit *" → RED
-        // - "Hauteur maximale de vol de 30 m *" → Light Red
-        // - "Hauteur maximale de vol de 50 m *" → ORANGE  
-        // - "Hauteur maximale de vol de 60 m *" → Yellow-Orange
-        // - "Hauteur maximale de vol de 100 m *" → YELLOW
         const limite = (props.limite || '').toLowerCase();
         const remarque = props.remarque || '';
 
         let color = 'UNKNOWN';
         let maxHeight: number | null = null;
-        let description = props.limite || 'Zone soumise à restrictions';
-        // Note: L'API IGN ne fournit pas le type exact de zone (CTR, Zone P/D/R, parc naturel, etc.)
-        // On laisse vide plutôt que d'afficher un terme incorrect
-        let zoneType = '';
+        const description = props.limite || 'Zone soumise à restrictions';
+        const zoneType = remarque || '';
 
-        // Parse the "limite" field
         if (limite.includes('vol interdit')) {
             color = 'RED';
             maxHeight = null;
-        } else if (limite.includes('hauteur maximale')) {
-            // Extract the height value using regex
-            const heightMatch = limite.match(/(\d+)\s*m/);
-            if (heightMatch) {
-                maxHeight = parseInt(heightMatch[1], 10);
-                
-                // Determine color based on height
-                if (maxHeight <= 30) {
-                    color = 'RED'; // Light red in the legend
-                } else if (maxHeight <= 50) {
-                    color = 'ORANGE';
-                } else if (maxHeight <= 60) {
-                    color = 'YELLOW_ORANGE';
-                } else {
-                    color = 'YELLOW'; // 100m+
-                }
+        } else {
+            const h = this._extractHeight(limite);
+            maxHeight = h;
+             if (h !== null) {
+                if (h <= 30) color = 'RED';
+                else if (h <= 50) color = 'ORANGE';
+                else if (h <= 60) color = 'YELLOW_ORANGE'; // Custom mapping if needed
+                else color = 'YELLOW';
             }
-        }
-
-        // Try to extract zone type from remarque if available
-        if (remarque) {
-            zoneType = remarque;
         }
 
         return {
@@ -133,20 +103,19 @@ export default class RestrictionInfoService {
             maxHeight,
             zoneType,
             description,
-            legislation: 'Arrêté Espace (3 décembre 2020) - Mise à jour Janvier 2026'
+            legislation: 'Données DGAC/IGN - ' + (props.nom || '')
         };
     }
 
-    /**
-     * Get a human-readable color name in French.
-     */
     getColorLabel(color: string): string {
         const labels: Record<string, string> = {
-            'RED': 'Rouge - Interdit',
+            'RED': 'Rouge - Interdit / 30m',
             'ORANGE': 'Orange - 50m max',
             'YELLOW': 'Jaune - 100m max',
+            'GREEN': 'Vert - 120m max', // NEW
             'UNKNOWN': 'Non défini'
         };
         return labels[color] || color;
     }
 }
+

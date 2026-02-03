@@ -58,6 +58,7 @@ export default class MapController {
     private miniMap: any;
     private currentMiniMapLayer: L.Layer | null;
     private restrictionInfoService: RestrictionInfoService;
+    private _droneLayer: L.GeoJSON | null = null;
 
     constructor() {
         this.mapService = new MapService();
@@ -145,21 +146,52 @@ export default class MapController {
 
         // Créer un contrôle séparé pour les overlays (topright, en dessous du basemap switcher)
         const overlayMaps: Record<string, L.Layer> = {};
-        const droneLayer = this.layerService.getDroneRestrictionsLayer();
-        overlayMaps["Restrictions Drones (IGN)"] = droneLayer;  // Sans emoji
-
+        
         this.layerControl = L.control.layers(undefined, overlayMaps, {
             position: 'topright',
             collapsed: true
         }).addTo(map);
 
-        // Enable by default
-        droneLayer.addTo(map);
+        // Async load drone layer
+        this.loadDroneLayer(); 
 
         // Configuration du comportement hover pour desktop
         setTimeout(() => {
             this._setupLayerControlHover();
         }, 200);
+    }
+
+    private async loadDroneLayer(): Promise<void> {
+        const map = this.mapService.getMap();
+        if (!map) return;
+
+        try {
+            // Load allowed zones FIRST (pane: allowedPane)
+            // We pass the pane via options, requires LayerService update to accept options or we set it here if LayerService returns a GeoJSON layer that we can mutate.
+            // LayerService.loadAllowedZonesLayer returns Promise<L.GeoJSON>.
+            // We can set the pane using options in the L.geoJSON call inside LayerService, OR here.
+            // BUT L.geoJSON options are set at creation. Resetting pane after creation iterates layers.
+            // Best to pass pane name to LayerService methods.
+            
+            // Let's assume we modify LayerService to accept an options object or string.
+            // Or simpler: iterate and set pane.
+            
+            const allowedLayer = await this.layerService.loadAllowedZonesLayer({ pane: 'allowedPane' });
+            if (allowedLayer) {
+                allowedLayer.addTo(map); // Will check options.pane
+                this.layerControl?.addOverlay(allowedLayer, "Zones Autorisées");
+            }
+
+            // Load restrictions on top (pane: restrictionPane)
+            this._droneLayer = await this.layerService.loadDroneRestrictionsLayer({ pane: 'restrictionPane' });
+            if (this._droneLayer) {
+                this.layerControl?.addOverlay(this._droneLayer, "Restrictions");
+                this._droneLayer.addTo(map);
+                this._droneLayer.bringToFront(); // Ensure it's top within its pane
+            }
+        } catch (error) {
+            console.error("Failed to load drone layers:", error);
+        }
     }
 
     private _setupLayerControlHover(): void {
@@ -219,62 +251,36 @@ export default class MapController {
             if (zoom < 8) return;
 
             try {
-                const info = await this.restrictionInfoService.getFeatureInfo(lat, lng, zoom, map);
+                const info = this.restrictionInfoService.getRestrictionInfo(lat, lng, this._droneLayer as L.GeoJSON);
 
-                if (!info) {
-                    return; // No restriction at this location
-                }
-
-                // Map color to CSS class
-                const colorClass = info.color.toLowerCase().replace('_', '-');
-                
-                // Build height display - show IGN data as indicative only
-                let heightHtml = '';
-                if (info.maxHeight !== null) {
-                    heightHtml = `
-                        <div class="restriction-row">
-                            <span class="restriction-label">Donnée IGN:</span>
-                            <span class="restriction-value">${info.maxHeight}m (indicatif)</span>
+            if (!info) {
+                 return; 
+            }
+            
+            // Create popup content
+            const popupContent = `
+                <div class="ui card restriction-popup">
+                    <div class="content">
+                        <div class="header" style="color: ${this._getColorCode(info.color)}">
+                            <i class="exclamation triangle icon"></i>
+                            ${info.maxHeight !== null ? `Max: ${info.maxHeight}m` : 'VOL INTERDIT'}
                         </div>
-                    `;
-                } else {
-                    heightHtml = `
-                        <div class="restriction-row forbidden">
-                            <span class="restriction-value">⛔ Vol interdit</span>
+                        <div class="meta">
+                            <span class="category">${info.zoneType}</span>
                         </div>
-                    `;
-                }
-
-                const content = `
-                    <div class="restriction-popup ${colorClass}">
-                        <div class="restriction-header">
-                            <span class="restriction-title">🚁 Restriction UAS</span>
+                        <div class="description">
+                            ${info.description}
                         </div>
-                        <div class="restriction-body">
-                            <div class="restriction-row">
-                                <span class="restriction-label">Zone:</span>
-                                <span class="restriction-value">${info.description.replace(' *', '')}</span>
-                            </div>
-                            ${heightHtml}
-                            <div class="restriction-warning">
-                                <small>⚠️ Valeur indicative. Vérifiez les conditions réelles avant tout vol.</small>
-                            </div>
-                            <div class="restriction-footer">
-                                <small>📜 ${info.legislation}</small>
-                            </div>
-                        </div>
-                        <a href="https://www.ecologie.gouv.fr/politiques-publiques/guides-exploitants-daeronefs" 
-                           target="_blank" 
-                           rel="noopener" 
-                           class="restriction-link">
-                            📖 Guides exploitants DGAC →
-                        </a>
                     </div>
-                `;
-
+                    <div class="extra content">
+                         <i class="file alternate outline icon"></i>
+                         ${info.legislation}
+                    </div>
+                </div>
+            `;        
                 L.popup({ className: 'restriction-popup-container' })
                     .setLatLng(e.latlng)
-                    .setContent(content)
+                    .setContent(popupContent)
                     .openOn(map);
 
             } catch (error) {
@@ -518,6 +524,18 @@ export default class MapController {
         titleControl.addTo(map);
     }
 
+    private _getColorCode(colorKey: string): string {
+        const colors: Record<string, string> = {
+            'RED': '#db2828',
+            'ORANGE': '#f2711c',
+            'YELLOW': '#fbbd08',
+            'YELLOW_ORANGE': '#fce205',
+            'GREEN': '#21ba45', // Added Green 
+            'UNKNOWN': '#767676'
+        };
+        return colors[colorKey] || colors['UNKNOWN'];
+    }
+
     private _addScaleControl(): void {
         const map = this.mapService.getMap();
         if (map) {
@@ -540,15 +558,19 @@ export default class MapController {
 
             div.innerHTML = `
                 <button class="legend-toggle" onclick="window.toggleLegend()">
-                    <i data-lucide="info" style="width: 16px; height: 16px; margin-right: 4px; vertical-align: middle;"></i>
+                    <span class="material-symbols-outlined" style="font-size: 20px;">info</span>
                 </button>
                 <div class="legend-content">
                     <h4>Légende</h4>
-                    <i style="background:#ff0000"></i> Vol interdit <br>
-                    <i style="background:#ff9999"></i> Hauteur maximale de vol de 30m <br>
-                    <i style="background:#ffaa00"></i> Hauteur maximale de vol de 50m <br>
-                    <i style="background:#ffdd00"></i> Hauteur maximale de vol de 60m <br>
-                    <i style="background:#ffff00"></i> Hauteur maximale de vol de 100m <br>
+                    <div style="display: flex; align-items: center; margin-bottom: 8px; padding: 6px; background: rgba(33,186,69,0.1); border-radius: 4px;">
+                        <span class="material-symbols-outlined" style="color:#21ba45; margin-right: 6px;">check_circle</span>
+                        <span><strong>Autorisé (Max 120m)</strong></span>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; margin: 6px 0;">
+                        <span class="material-symbols-outlined" style="color:#b22222; margin-right: 6px;">block</span>
+                        <span><strong>Restriction (< 120m)</strong></span>
+                    </div>
                 </div>
             `;
 

@@ -11,6 +11,12 @@ La documentation détaillée technique est disponible dans le dossier [`docs/`](
 - **[Cartographie](./docs/libs/mapping.md)** : Leaflet, IGN Geoportail, Plugins.
 - **[Interface UI](./docs/libs/ui.md)** : Fomantic UI, SASS, Icons.
 
+## 🌍 Données & Cartographie
+
+- **Restrictions Drone** : Données GeoJSON hébergées localement (`public/data/restrictions.geojson`) provenant de l'IGN/Geoplateforme.
+- **Zones Autorisées** : Couche verte générée (`public/data/allowed_zones.geojson`) couvrant la France Métropolitaine et les DROM-COM.
+- **Fonds de carte** : OSM, IGN Plan, IGN Satellite via Leaflet.
+
 ## 🚀 Démarrage Rapide
 
 ### Prérequis

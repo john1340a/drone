@@ -17,8 +17,7 @@ blob-report/
 playwright/.cache/
 
 # Documentation de validation
-VALIDATION.md
-CLAUDE.md
+
 
 # Logs
 npm-debug.log*
@@ -45,3 +44,18 @@ Thumbs.db
 *.tmp
 *.temp
 
+
+# Data utility scripts
+check_wfs.js
+create_allowed_zones.js
+create_allowed_zones.mjs
+download_*.js
+add_*.js
+find_layer_name.js
+fix_saint_martin.js
+get_cap.js
+list_wfs.js
+capabilities.xml
+
+# Large Data files
+public/data/*.geojson
