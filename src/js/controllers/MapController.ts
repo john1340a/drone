@@ -579,7 +579,7 @@ export default class MapController {
                     <span class="material-symbols-outlined" style="font-size: 20px;">info</span>
                 </button>
                 <div class="legend-content">
-                    <h4>Légende (SIA)</h4>
+                    <h4>Légende</h4>
                     <div style="display: flex; align-items: center; margin-bottom: 8px; padding: 6px; background: rgba(52,152,219,0.1); border-radius: 4px;">
                         <span class="material-symbols-outlined" style="color:#3498db; margin-right: 6px;">check_circle</span>
                         <span><strong>Autorisé (Max 120m)</strong></span>
