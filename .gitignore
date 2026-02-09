@@ -56,3 +56,5 @@ fix_saint_martin.js
 get_cap.js
 list_wfs.js
 capabilities.xml
+analyze_*.js
+check_*.js
