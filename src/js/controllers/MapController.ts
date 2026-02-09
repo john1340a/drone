@@ -542,9 +542,15 @@ export default class MapController {
             'ORANGE': '#f2711c',
             'YELLOW': '#fbbd08',
             'YELLOW_ORANGE': '#fce205',
+            'BLUE': '#3498db', // New Info Color
             'GREEN': '#21ba45', // Added Green 
             'UNKNOWN': '#767676'
         };
+        // Update mapping to return BLUE for Info default if needed, 
+        // strictly speaking _onEachFeature passes the hex directly to popup, 
+        // but this helper might be used if we pass keys. 
+        // Actually _onEachFeature uses hex vars. 
+        // But let's keep this clean.
         return colors[colorKey] || colors['UNKNOWN'];
     }
 
@@ -573,15 +579,25 @@ export default class MapController {
                     <span class="material-symbols-outlined" style="font-size: 20px;">info</span>
                 </button>
                 <div class="legend-content">
-                    <h4>Légende</h4>
-                    <div style="display: flex; align-items: center; margin-bottom: 8px; padding: 6px; background: rgba(33,186,69,0.1); border-radius: 4px;">
-                        <span class="material-symbols-outlined" style="color:#21ba45; margin-right: 6px;">check_circle</span>
+                    <h4>Légende (SIA)</h4>
+                    <div style="display: flex; align-items: center; margin-bottom: 8px; padding: 6px; background: rgba(52,152,219,0.1); border-radius: 4px;">
+                        <span class="material-symbols-outlined" style="color:#3498db; margin-right: 6px;">check_circle</span>
                         <span><strong>Autorisé (Max 120m)</strong></span>
                     </div>
                     
-                    <div style="display: flex; align-items: center; margin: 6px 0;">
+                    <div style="display: flex; align-items: center; margin: 4px 0;">
                         <span class="material-symbols-outlined" style="color:#b22222; margin-right: 6px;">block</span>
-                        <span><strong>Restriction (< 120m)</strong></span>
+                        <span><strong>Interdit / Max 30m</strong></span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; margin: 4px 0;">
+                        <span class="material-symbols-outlined" style="color:#d35400; margin-right: 6px;">warning</span>
+                        <span><strong>Restreint (Max 50m)</strong></span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; margin: 4px 0;">
+                        <span class="material-symbols-outlined" style="color:#21ba45; margin-right: 6px;">info</span>
+                        <span><strong>Information</strong></span>
                     </div>
                 </div>
             `;
