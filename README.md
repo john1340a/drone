@@ -13,7 +13,9 @@ La documentation détaillée technique est disponible dans le dossier [`docs/`](
 
 ## 🌍 Données & Cartographie
 
-- **Restrictions Drone** : Données GeoJSON hébergées localement (`public/data/restrictions.geojson`) provenant de l'IGN/Geoplateforme.
+- **Restrictions Drone** : Données officielles **SIA (ED-269)** converties en GeoJSON (`public/data/restrictions_sia.geojson`).
+  - **Mise à jour** : Script `convert_sia_to_geojson.js` pour traiter les fichiers JSON bruts du SIA.
+  - **Visualisation** : Code couleur adapté (Bleu=Autorisé, Vert=Info, Orange=Restreint, Rouge=Interdit).
 - **Zones Autorisées** : Couche verte générée (`public/data/allowed_zones.geojson`) couvrant la France Métropolitaine et les DROM-COM.
 - **Fonds de carte** : OSM, IGN Plan, IGN Satellite via Leaflet.
 
