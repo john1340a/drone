@@ -1,6 +1,6 @@
 # Architecture du Projet
 
-Ce document décrit l'architecture technique de l'application **SIG Restrictions Drone**. L'objectif est de fournir une vue d'ensemble pour comprendre les choix de conception et faciliter la maintenance.
+Ce document décrit l'architecture technique de l'application **Zones de vol Drone**. L'objectif est de fournir une vue d'ensemble pour comprendre les choix de conception et faciliter la maintenance.
 
 ## Structure des Dossiers
 

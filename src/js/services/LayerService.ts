@@ -51,7 +51,11 @@ export default class LayerService {
                 colorCode = '#b22222'; // Dark Red
                 statusText = 'Vol Interdit';
                 iconName = 'block';
-            } else if (restriction === 'RESTRICTED' || restriction === 'CONDITIONAL' || restriction === 'REQ_AUTHORISATION') {
+            } else if (restriction === 'REQ_AUTHORISATION') {
+                colorCode = '#8e44ad'; // Purple
+                statusText = 'Autorisation Requise';
+                iconName = 'lock';
+            } else if (restriction === 'RESTRICTED' || restriction === 'CONDITIONAL') {
                 colorCode = '#d35400'; // Orange
                 statusText = 'Restreint';
                 iconName = 'warning';
@@ -132,10 +136,10 @@ export default class LayerService {
             onEachFeature: (_feature, layer) => {
                 // const props = feature.properties as any;
                 const popupContent = `
-                    <div class="restriction-popup" style="min-width: 200px;">
+                    <div class="restriction-popup" style="min-width: 220px;">
                         <div class="restriction-header" style="background: #3498db; color: white; padding: 8px; border-radius: 4px 4px 0 0; font-weight: bold; display: flex; align-items: center;">
-                            <span class="material-symbols-outlined" style="margin-right: 6px;">check_circle</span>
-                            Zone de Vol Autorisée
+                            <span class="material-symbols-outlined" style="margin-right: 6px;">explore</span>
+                            Hors zone réglementée SIA
                         </div>
                         <div class="restriction-body" style="padding: 8px; background: rgba(255,255,255,0.95); border-radius: 0 0 4px 4px;">
                             <div style="margin-bottom: 6px; display: flex; align-items: center;">
@@ -143,6 +147,10 @@ export default class LayerService {
                                 <strong>Hauteur max:</strong> 120m
                             </div>
                             <div style="font-size: 0.9em; color: #666;">Catégorie Ouverte - A1/A2/A3</div>
+                            <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 6px; margin-top: 8px; font-size: 0.85em; display: flex; align-items: flex-start;">
+                                <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px; color: #856404; flex-shrink: 0;">warning</span>
+                                <span style="color: #856404;">Vérifiez les règles locales : <strong>survol de zones urbaines</strong>, propriétés privées, rassemblements de personnes.</span>
+                            </div>
                             <div style="font-size: 0.8em; color: #999; margin-top: 8px; display: flex; align-items: center;">
                                 <span class="material-symbols-outlined" style="font-size: 14px; margin-right: 4px;">gavel</span>
                                 Réglementation UE 2019/947
@@ -187,7 +195,10 @@ export default class LayerService {
         } else if (restriction === 'PROHIBITED') {
             color = '#b22222'; // DARKER RED
             fillOpacity = 0.4; // Filled
-        } else if (restriction === 'RESTRICTED' || restriction === 'CONDITIONAL' || restriction === 'REQ_AUTHORISATION') {
+        } else if (restriction === 'REQ_AUTHORISATION') {
+             color = '#8e44ad'; // Purple
+             fillOpacity = 0.3;
+        } else if (restriction === 'RESTRICTED' || restriction === 'CONDITIONAL') {
              color = '#d35400';
              fillOpacity = 0.3;
              

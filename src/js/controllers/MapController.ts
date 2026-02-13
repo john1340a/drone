@@ -528,7 +528,7 @@ export default class MapController {
             const div = L.DomUtil.create('div', 'map-title-control');
             div.innerHTML = `
                 <i data-lucide="map-pin" style="width: 18px; height: 18px; margin-right: 8px; vertical-align: middle;"></i>
-                Zones de Restrictions Drone
+                Zones de vol Drone
             `;
             return div;
         };
@@ -579,25 +579,34 @@ export default class MapController {
                     <span class="material-symbols-outlined" style="font-size: 20px;">info</span>
                 </button>
                 <div class="legend-content">
-                    <h4>Légende</h4>
-                    <div style="display: flex; align-items: center; margin-bottom: 8px; padding: 6px; background: rgba(52,152,219,0.1); border-radius: 4px;">
-                        <span class="material-symbols-outlined" style="color:#3498db; margin-right: 6px;">check_circle</span>
-                        <span><strong>Autorisé (Max 120m)</strong></span>
+                    <h4>Légende (SIA)</h4>
+                    <div style="display: flex; align-items: center; margin-bottom: 6px; padding: 6px; background: rgba(52,152,219,0.1); border-radius: 4px;">
+                        <span class="material-symbols-outlined" style="color:#3498db; margin-right: 6px;">explore</span>
+                        <span><strong>Hors zone SIA</strong></span>
                     </div>
                     
                     <div style="display: flex; align-items: center; margin: 4px 0;">
                         <span class="material-symbols-outlined" style="color:#b22222; margin-right: 6px;">block</span>
-                        <span><strong>Interdit / Max 30m</strong></span>
+                        <span><strong>Interdit</strong></span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; margin: 4px 0;">
+                        <span class="material-symbols-outlined" style="color:#8e44ad; margin-right: 6px;">lock</span>
+                        <span><strong>Autorisation requise</strong></span>
                     </div>
 
                     <div style="display: flex; align-items: center; margin: 4px 0;">
                         <span class="material-symbols-outlined" style="color:#d35400; margin-right: 6px;">warning</span>
-                        <span><strong>Restreint (Max 50m)</strong></span>
+                        <span><strong>Restreint / Conditionnel</strong></span>
                     </div>
 
                     <div style="display: flex; align-items: center; margin: 4px 0;">
-                        <span class="material-symbols-outlined" style="color:#21ba45; margin-right: 6px;">info</span>
-                        <span><strong>Information</strong></span>
+                        <span class="material-symbols-outlined" style="color:#21ba45; margin-right: 6px;">cloud</span>
+                        <span><strong>Info (> 120m)</strong></span>
+                    </div>
+
+                    <div style="background: #fff3cd; border-radius: 4px; padding: 5px; margin-top: 6px; font-size: 0.8em; color: #856404;">
+                        ⚠️ Zones urbaines non cartographiées. Vérifiez les règles locales.
                     </div>
                 </div>
             `;

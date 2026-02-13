@@ -22,12 +22,13 @@ Pour assurer une lisibilité maximale pour les télépilotes de loisir (Catégor
 
 ### 1. Code Couleur
 
-| Couleur       | Catégorie            | Condition Technique                                                                     |
-| :------------ | :------------------- | :-------------------------------------------------------------------------------------- |
-| 🔵 **Bleu**   | **Autorisé**         | Couche de fond (Allowed Zones)                                                          |
-| 🟢 **Vert**   | **Info / Fly Under** | `min_height >= 120m` (Peu importe le type de restriction)                               |
-| ⛔ **Rouge**  | **Interdit**         | `restriction = "PROHIBITED"` ET `min_height < 120m`                                     |
-| 🟠 **Orange** | **Restreint**        | `restriction` = `RESTRICTED`, `CONDITIONAL`, `REQ_AUTHORISATION` ET `min_height < 120m` |
+| Couleur       | Catégorie                | Condition Technique                                                |
+| :------------ | :----------------------- | :----------------------------------------------------------------- |
+| 🔵 **Bleu**   | **Hors zone SIA**        | Couche de fond (pas de restriction SIA)                            |
+| 🟢 **Vert**   | **Info / Fly Under**     | `min_height >= 120m` (Peu importe le type de restriction)          |
+| ⛔ **Rouge**  | **Interdit**             | `restriction = "PROHIBITED"` ET `min_height < 120m`                |
+| 🟣 **Violet** | **Autorisation requise** | `restriction = "REQ_AUTHORISATION"` ET `min_height < 120m`         |
+| 🟠 **Orange** | **Restreint**            | `restriction` = `RESTRICTED`, `CONDITIONAL` ET `min_height < 120m` |
 
 ### 2. Justification du "Vert" (> 120m)
 
@@ -37,5 +38,6 @@ Elles sont donc affichées en **Vert** pour informer le pilote qu'il peut voler 
 
 ## ⚠️ Points d'Attention
 
+- **Zones urbaines** : Les zones urbaines (agglomérations) nécessitant une autorisation préfectorale ne sont PAS cartographiées dans les données SIA. Un avertissement est affiché dans le popup des zones bleues et dans la légende.
 - **Mise à jour** : Lors de la publication d'un nouveau fichier SIA, il faut relancer `node convert_sia_to_geojson.js`.
 - **Hauteurs** : L'application privilégie les hauteurs AGL (Above Ground Level). Les hauteurs AMSL (Above Mean Sea Level) sont affichées à titre indicatif dans les popups.

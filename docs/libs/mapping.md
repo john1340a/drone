@@ -57,15 +57,24 @@ Les librairies utilisées pour la gestion de la carte interactive et des donnée
 - **Velocity Layer** : Sert de "seed" pour générer le champ d'animation des vents.
 - **URL API** : `https://api.open-meteo.com/v1/forecast`
 
-## Sources de Données (IGN)
+## Sources de Données
+
+### Données SIA (ED-269) — Restrictions Drone
+
+**Rôle** : Source officielle des zones réglementées UAS (drones) en France.
+**Format** : JSON propriétaire SIA, converti en GeoJSON standard via `convert_sia_to_geojson.js`.
+
+- **Fichiers** :
+  - `public/data/restrictions_sia.geojson` : Restrictions converties (3627 zones).
+  - `public/data/allowed_zones.geojson` : Zones hors restriction SIA (France + DROM-COM).
+- **Particularités** : Les géométries `Circle` du SIA sont converties en Polygones 64 points.
+- **Documentation** : [`docs/migration_sia.md`](../migration_sia.md)
 
 ### Géoservices IGN
 
-**Rôle** : Fournisseur de tuiles et de données vectorielles.
+**Rôle** : Fournisseur de tuiles de fond de carte.
 
 1.  **WMS (Web Map Service)** : Utilisé pour les orthophotos et cartes scannées.
     - _URL_ : `https://wxs.ign.fr/essentiels/geoportail/r/wms`
-2.  **GeoJSON Local** : Utilisé pour la couche de restriction drone (`restrictions.geojson`) et les zones autorisées (`allowed_zones.geojson`).
-    - _Pourquoi_ : Permet une fiabilité totale (pas de dépendance API externe instable), un fonctionnement hors-ligne, et un post-traitement client (couleurs, popups, zones vertes) impossible avec des tuiles raster WMTS.
 
 - **Documentation** : [https://geoservices.ign.fr/](https://geoservices.ign.fr/)
