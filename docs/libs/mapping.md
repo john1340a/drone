@@ -45,6 +45,18 @@ Les librairies utilisées pour la gestion de la carte interactive et des donnée
 
 - **Lien** : [https://github.com/onaci/leaflet-velocity](https://github.com/onaci/leaflet-velocity)
 
+### leaflet-pmtiles-layer (+ Leaflet.VectorGrid)
+
+**Rôle** : Rendu de tuiles vectorielles PMTiles dans Leaflet.
+**Pourquoi** : Remplace le chargement GeoJSON brut (21 MB en mémoire, 3627 polygones) par des tuiles vectorielles chargées progressivement. Résultat : pan/zoom fluide même avec des milliers de polygones.
+**Fonctionnement** :
+
+- Lit les fichiers `.pmtiles` via HTTP Range Requests (pas de serveur de tuiles).
+- Basé sur `Leaflet.VectorGrid` pour le rendu Canvas des géométries vectorielles.
+- Stylisation dynamique par feature via `vectorTileLayerStyles`.
+
+- **Liens** : [leaflet-pmtiles-layer](https://github.com/eliotjordan/Leaflet.PMTilesLayer), [Leaflet.VectorGrid](https://github.com/Leaflet/Leaflet.VectorGrid)
+
 ## Services Externes
 
 ### OpenMeteo (Météo & Vent)
@@ -62,12 +74,16 @@ Les librairies utilisées pour la gestion de la carte interactive et des donnée
 ### Données SIA (ED-269) — Restrictions Drone
 
 **Rôle** : Source officielle des zones réglementées UAS (drones) en France.
-**Format** : JSON propriétaire SIA, converti en GeoJSON standard via `convert_sia_to_geojson.js`.
+**Format** : JSON propriétaire SIA → GeoJSON → **PMTiles** (tuiles vectorielles) via `tippecanoe`.
 
 - **Fichiers** :
-  - `public/data/restrictions_sia.geojson` : Restrictions converties (3627 zones).
-  - `public/data/allowed_zones.geojson` : Zones hors restriction SIA (France + DROM-COM).
-- **Particularités** : Les géométries `Circle` du SIA sont converties en Polygones 64 points.
+  - `public/data/restrictions_sia.pmtiles` : Restrictions (3627 zones, z4–z12, ~18 MB).
+  - `public/data/allowed_zones.pmtiles` : Zones hors restriction SIA (z4–z10, ~0.9 MB).
+  - `public/data/restrictions_sia.geojson` : Fallback GeoJSON (17.8 MB).
+  - `public/data/allowed_zones.geojson` : Fallback GeoJSON (3.6 MB).
+- **Conversion PMTiles** :
+  - Outil : `tippecanoe` 2.49 (via WSL Ubuntu)
+  - Commande : `tippecanoe -o output.pmtiles --minimum-zoom=4 --maximum-zoom=12 --simplification=10 --no-tile-size-limit -l layer_name input.geojson`
 - **Documentation** : [`docs/migration_sia.md`](../migration_sia.md)
 
 ### Géoservices IGN

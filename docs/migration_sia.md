@@ -14,7 +14,10 @@ Remplacer les flux IGN (WFS/WMTS) souvent incomplets ou instables par les donné
     - Nettoyage du BOM UTF-8.
     - Extraction des géométries (`horizontalProjection`).
     - **Conversion des Cercles** : Les zones définies par un cercle (Centre + Rayon) sont approximées en Polygones (64 points) pour être lisibles par Leaflet.
-3.  **Sortie** : `public/data/restrictions_sia.geojson` (chargé par l'application).
+3.  **Tuiles vectorielles** : Conversion GeoJSON → PMTiles via `tippecanoe` (WSL Ubuntu).
+    - `restrictions_sia.pmtiles` (z4–z12, ~18 MB)
+    - `allowed_zones.pmtiles` (z4–z10, ~0.9 MB)
+4.  **Chargement** : `LayerService.ts` charge les PMTiles via `leaflet-pmtiles-layer` (Leaflet.VectorGrid).
 
 ## 🎨 Logique de Visualisation
 
@@ -22,20 +25,22 @@ Pour assurer une lisibilité maximale pour les télépilotes de loisir (Catégor
 
 ### 1. Code Couleur
 
-| Couleur       | Catégorie                | Condition Technique                                                |
-| :------------ | :----------------------- | :----------------------------------------------------------------- |
-| 🔵 **Bleu**   | **Hors zone SIA**        | Couche de fond (pas de restriction SIA)                            |
-| 🟢 **Vert**   | **Info / Fly Under**     | `min_height >= 120m` (Peu importe le type de restriction)          |
-| ⛔ **Rouge**  | **Interdit**             | `restriction = "PROHIBITED"` ET `min_height < 120m`                |
-| 🟣 **Violet** | **Autorisation requise** | `restriction = "REQ_AUTHORISATION"` ET `min_height < 120m`         |
-| 🟠 **Orange** | **Restreint**            | `restriction` = `RESTRICTED`, `CONDITIONAL` ET `min_height < 120m` |
+| Couleur            | Catégorie                 | Condition Technique                                                |
+| :----------------- | :------------------------ | :----------------------------------------------------------------- |
+| 🔵 **Bleu**        | **Hors zone SIA**         | Couche de fond (pas de restriction SIA)                            |
+| 🔵 **Bleu acier**  | **Info / Non applicable** | `min_height >= 120m` (Peu importe le type de restriction)          |
+| ⛔ **Rouge**       | **Interdit**              | `restriction = "PROHIBITED"` ET `min_height < 120m`                |
+| 🟠 **Orange**      | **Autorisation requise**  | `restriction = "REQ_AUTHORISATION"` ET `min_height < 120m`         |
+| 🟡 **Ambre/Jaune** | **Restreint**             | `restriction` = `RESTRICTED`, `CONDITIONAL` ET `min_height < 120m` |
 
-### 2. Justification du "Vert" (> 120m)
+### 2. Justification du "Bleu acier" (> 120m)
 
 Certaines zones sont marquées "PROHIBITED" ou "RESTRICTED" par le SIA mais commencent à une altitude élevée (ex: FL 115, soit ~3500m).
 La limite de 120m AGL pour les drones existe pour assurer la **ségrégation** avec les aéronefs habités (contrôlés ou non), et ainsi éviter tout risque d'intrusion dans les espaces de vol sans contact préalable.
 Pour un drone de loisir limité légalement à **120m de hauteur**, ces zones ne sont **pas contraignantes**.
-Elles sont donc affichées en **Vert** pour informer le pilote qu'il peut voler _en dessous_ de la zone active.
+Elles sont donc affichées en **bleu acier** (couleur neutre, non alarmante) pour informer le pilote qu'il peut voler _en dessous_ de la zone active.
+
+> **Note UX** : Le vert a été retiré pour les zones de restriction suite à des retours d'expert UX — le vert étant perçu comme "tout va bien" alors qu'il s'agit toujours de zones réglementées.
 
 ## ⚠️ Points d'Attention
 

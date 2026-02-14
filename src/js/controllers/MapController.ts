@@ -36,7 +36,7 @@ import MapService from '../services/MapService';
 import LayerService from '../services/LayerService';
 import Config from '../config/config';
 import WeatherService from '../services/WeatherService';
-import RestrictionInfoService from '../services/RestrictionInfoService';
+// import RestrictionInfoService from '../services/RestrictionInfoService';
 import BasemapSwitcher from '../controls/BasemapSwitcher';
 
 declare const lucide: any;
@@ -57,7 +57,7 @@ export default class MapController {
     private layerControl: L.Control.Layers | null;
     private miniMap: any;
     private currentMiniMapLayer: L.Layer | null;
-    private restrictionInfoService: RestrictionInfoService;
+    // private _restrictionInfoService: RestrictionInfoService; // Unused with PMTiles (click handled by VectorGrid)
     private _droneLayer: L.GeoJSON | null = null;
 
     constructor() {
@@ -69,7 +69,7 @@ export default class MapController {
         this.layerControl = null;
         this.miniMap = null;
         this.currentMiniMapLayer = null;
-        this.restrictionInfoService = new RestrictionInfoService();
+        // this._restrictionInfoService = new RestrictionInfoService();
     }
 
     initialize(): void {
@@ -164,6 +164,9 @@ export default class MapController {
             collapsed: true
         }).addTo(map);
 
+        // Pass map reference to LayerService for popup opening (PMTiles/VectorGrid)
+        this.layerService.setMap(map);
+
         // Async load drone layer
         this.loadDroneLayer(); 
 
@@ -188,14 +191,14 @@ export default class MapController {
             // Let's assume we modify LayerService to accept an options object or string.
             // Or simpler: iterate and set pane.
             
-            const allowedLayer = await this.layerService.loadAllowedZonesLayer({ pane: 'allowedPane' });
+            const allowedLayer = await this.layerService.loadAllowedZonesPMTiles('allowedPane');
             if (allowedLayer) {
-                allowedLayer.addTo(map); // Will check options.pane
+                allowedLayer.addTo(map);
                 this.layerControl?.addOverlay(allowedLayer, "Zones Autorisées");
             }
 
-            // Load restrictions on top (pane: restrictionPane)
-            this._droneLayer = await this.layerService.loadDroneRestrictionsLayer({ pane: 'restrictionPane' });
+            // Load restrictions on top (pane: restrictionPane) — PMTiles vector tiles
+            this._droneLayer = await this.layerService.loadDroneRestrictionsPMTiles('restrictionPane') as any;
             if (this._droneLayer) {
                 this.layerControl?.addOverlay(this._droneLayer, "Restrictions");
                 this._droneLayer.addTo(map);
@@ -255,49 +258,15 @@ export default class MapController {
         const map = this.mapService.getMap();
         if (!map) return;
 
-        map.on('click', async (e: L.LeafletMouseEvent) => {
-            const { lat, lng } = e.latlng;
+        map.on('click', async (_e: L.LeafletMouseEvent) => {
             const zoom = map.getZoom();
 
             // Only query if zoom is high enough for meaningful detail
             if (zoom < 8) return;
 
-            try {
-                const info = this.restrictionInfoService.getRestrictionInfo(lat, lng, this._droneLayer as L.GeoJSON);
-
-            if (!info) {
-                 return; 
-            }
-            
-            // Create popup content
-            const popupContent = `
-                <div class="ui card restriction-popup">
-                    <div class="content">
-                        <div class="header" style="color: ${this._getColorCode(info.color)}">
-                            <i class="exclamation triangle icon"></i>
-                            ${info.maxHeight !== null ? `Max: ${info.maxHeight}m` : 'VOL INTERDIT'}
-                        </div>
-                        <div class="meta">
-                            <span class="category">${info.zoneType}</span>
-                        </div>
-                        <div class="description">
-                            ${info.description}
-                        </div>
-                    </div>
-                    <div class="extra content">
-                         <i class="file alternate outline icon"></i>
-                         ${info.legislation}
-                    </div>
-                </div>
-            `;        
-                L.popup({ className: 'restriction-popup-container' })
-                    .setLatLng(e.latlng)
-                    .setContent(popupContent)
-                    .openOn(map);
-
-            } catch (error) {
-                console.warn('Failed to get restriction info:', error);
-            }
+            // Note: With PMTiles/VectorGrid, restriction popups are handled
+            // directly by the VectorGrid click events in LayerService.
+            // This handler is kept for potential future map-level click logic.
         });
     }
 
@@ -536,23 +505,21 @@ export default class MapController {
         titleControl.addTo(map);
     }
 
+    // _getColorCode unused with PMTiles — kept for reference
+    /*
     private _getColorCode(colorKey: string): string {
         const colors: Record<string, string> = {
             'RED': '#db2828',
             'ORANGE': '#f2711c',
             'YELLOW': '#fbbd08',
             'YELLOW_ORANGE': '#fce205',
-            'BLUE': '#3498db', // New Info Color
-            'GREEN': '#21ba45', // Added Green 
+            'BLUE': '#3498db',
+            'GREEN': '#21ba45',
             'UNKNOWN': '#767676'
         };
-        // Update mapping to return BLUE for Info default if needed, 
-        // strictly speaking _onEachFeature passes the hex directly to popup, 
-        // but this helper might be used if we pass keys. 
-        // Actually _onEachFeature uses hex vars. 
-        // But let's keep this clean.
         return colors[colorKey] || colors['UNKNOWN'];
     }
+    */
 
     private _addScaleControl(): void {
         const map = this.mapService.getMap();
@@ -586,22 +553,22 @@ export default class MapController {
                     </div>
                     
                     <div style="display: flex; align-items: center; margin: 4px 0;">
-                        <span class="material-symbols-outlined" style="color:#b22222; margin-right: 6px;">block</span>
+                        <span class="material-symbols-outlined" style="color:#c0392b; margin-right: 6px;">block</span>
                         <span><strong>Interdit</strong></span>
                     </div>
 
                     <div style="display: flex; align-items: center; margin: 4px 0;">
-                        <span class="material-symbols-outlined" style="color:#8e44ad; margin-right: 6px;">lock</span>
+                        <span class="material-symbols-outlined" style="color:#e67e22; margin-right: 6px;">lock</span>
                         <span><strong>Autorisation requise</strong></span>
                     </div>
 
                     <div style="display: flex; align-items: center; margin: 4px 0;">
-                        <span class="material-symbols-outlined" style="color:#d35400; margin-right: 6px;">warning</span>
+                        <span class="material-symbols-outlined" style="color:#f39c12; margin-right: 6px;">warning</span>
                         <span><strong>Restreint / Conditionnel</strong></span>
                     </div>
 
                     <div style="display: flex; align-items: center; margin: 4px 0;">
-                        <span class="material-symbols-outlined" style="color:#21ba45; margin-right: 6px;">cloud</span>
+                        <span class="material-symbols-outlined" style="color:#5b7fa5; margin-right: 6px;">cloud</span>
                         <span><strong>Info (> 120m)</strong></span>
                     </div>
 

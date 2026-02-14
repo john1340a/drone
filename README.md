@@ -14,15 +14,15 @@ La documentation détaillée technique est disponible dans le dossier [`docs/`](
 
 ## 🌍 Données & Cartographie
 
-- **Restrictions Drone** : Données officielles **SIA (ED-269)** converties en GeoJSON (`public/data/restrictions_sia.geojson`).
-  - **Mise à jour** : Script `convert_sia_to_geojson.js` pour traiter les fichiers JSON bruts du SIA.
+- **Restrictions Drone** : Données officielles **SIA (ED-269)** optimisées en **tuiles vectorielles PMTiles** (`public/data/restrictions_sia.pmtiles`).
+  - **Mise à jour** : Script `convert_sia_to_geojson.js` + conversion PMTiles via `tippecanoe` (WSL).
   - **Visualisation** :
     - 🔵 Bleu : Hors zone réglementée SIA
-    - 🟣 Violet : Autorisation requise
-    - 🟠 Orange : Restreint / Conditionnel
     - 🔴 Rouge : Interdit
-    - 🟢 Vert : Information (> 120m)
-- **Zones hors restriction SIA** : Couche bleue (`public/data/allowed_zones.geojson`) couvrant la France Métropolitaine et les DROM-COM.
+    - 🟠 Orange : Autorisation requise
+    - 🟡 Ambre/Jaune : Restreint / Conditionnel
+    - 🔵 Bleu acier : Information (> 120m, non applicable)
+- **Zones hors restriction SIA** : Couche bleue en tuiles vectorielles (`public/data/allowed_zones.pmtiles`).
 - **Fonds de carte** : OSM, IGN Plan, IGN Satellite via Leaflet.
 
 > ⚠️ **Attention** : Les zones urbaines nécessitant une autorisation préfectorale ne sont pas cartographiées. Vérifiez toujours les règles locales.
