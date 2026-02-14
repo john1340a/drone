@@ -33,6 +33,7 @@ Pour assurer une lisibilité maximale pour les télépilotes de loisir (Catégor
 ### 2. Justification du "Vert" (> 120m)
 
 Certaines zones sont marquées "PROHIBITED" ou "RESTRICTED" par le SIA mais commencent à une altitude élevée (ex: FL 115, soit ~3500m).
+La limite de 120m AGL pour les drones existe pour assurer la **ségrégation** avec les aéronefs habités (contrôlés ou non), et ainsi éviter tout risque d'intrusion dans les espaces de vol sans contact préalable.
 Pour un drone de loisir limité légalement à **120m de hauteur**, ces zones ne sont **pas contraignantes**.
 Elles sont donc affichées en **Vert** pour informer le pilote qu'il peut voler _en dessous_ de la zone active.
 

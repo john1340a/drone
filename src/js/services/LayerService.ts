@@ -45,8 +45,8 @@ export default class LayerService {
             if (minH !== null && minH >= 120) {
                  // High altitude restrictions -> Green / Info
                  colorCode = '#21ba45';
-                 statusText = 'Espace Contrôlé > 120m';
-                 iconName = 'cloud'; // Cloud icon for high altitude
+                 statusText = 'Restriction > 120m (non applicable)';
+                 iconName = 'cloud';
             } else if (restriction === 'PROHIBITED') {
                 colorCode = '#b22222'; // Dark Red
                 statusText = 'Vol Interdit';
