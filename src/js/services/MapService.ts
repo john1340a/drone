@@ -25,9 +25,19 @@ export default class MapService {
             preferCanvas: true, // Canvas renderer for vector layers (much faster with 3600+ polygons)
             zoomControl: false, // Désactiver le contrôle par défaut pour le repositionner
             attributionControl: false, // On le recrée manuellement pour enlever le préfixe
+
+            // Panning fluide style OpenLayers / Lizmap
             inertia: true,
-            inertiaDeceleration: 2000,
-            inertiaMaxSpeed: 1500
+            inertiaDeceleration: 1500,    // Moins de friction = le pan glisse plus loin (défaut: 3000)
+            inertiaMaxSpeed: 3000,        // Vitesse max plus élevée (défaut: Infinity mais bridé)
+            easeLinearity: 0.25,          // Courbe d'accélération plus douce (défaut: 0.2)
+            worldCopyJump: true,          // Transition fluide aux bords du monde
+
+            // Zoom fluide
+            wheelPxPerZoomLevel: 90,      // Plus de pixels de scroll par niveau de zoom = zoom moins brusque (défaut: 60)
+            zoomSnap: 0.5,                // Permet des demi-niveaux de zoom pour plus de fluidité
+            zoomDelta: 0.5,               // Chaque clic de scroll = 0.5 zoom au lieu de 1
+            wheelDebounceTime: 60,        // Délai entre les événements de scroll (défaut: 40)
         });
 
         // Ajouter l'attribution sans le préfixe "Leaflet" pour gagner de la place sur mobile
