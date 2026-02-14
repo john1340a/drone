@@ -22,8 +22,12 @@ export default class MapService {
             zoom: config.zoom,
             minZoom: config.minZoom,
             maxZoom: config.maxZoom,
+            preferCanvas: true, // Canvas renderer for vector layers (much faster with 3600+ polygons)
             zoomControl: false, // Désactiver le contrôle par défaut pour le repositionner
-            attributionControl: false // On le recrée manuellement pour enlever le préfixe
+            attributionControl: false, // On le recrée manuellement pour enlever le préfixe
+            inertia: true,
+            inertiaDeceleration: 2000,
+            inertiaMaxSpeed: 1500
         });
 
         // Ajouter l'attribution sans le préfixe "Leaflet" pour gagner de la place sur mobile
