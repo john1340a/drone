@@ -10,6 +10,11 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    open: true
+    open: true,
+    headers: {
+      // Enable Range requests for PMTiles (required for partial tile fetching)
+      'Accept-Ranges': 'bytes',
+      'Access-Control-Allow-Headers': 'Range',
+    }
   }
 });

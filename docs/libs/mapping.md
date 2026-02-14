@@ -79,8 +79,6 @@ Les librairies utilisées pour la gestion de la carte interactive et des donnée
 - **Fichiers** :
   - `public/data/restrictions_sia.pmtiles` : Restrictions (3627 zones, z4–z12, ~18 MB).
   - `public/data/allowed_zones.pmtiles` : Zones hors restriction SIA (z4–z10, ~0.9 MB).
-  - `public/data/restrictions_sia.geojson` : Fallback GeoJSON (17.8 MB).
-  - `public/data/allowed_zones.geojson` : Fallback GeoJSON (3.6 MB).
 - **Conversion PMTiles** :
   - Outil : `tippecanoe` 2.49 (via WSL Ubuntu)
   - Commande : `tippecanoe -o output.pmtiles --minimum-zoom=4 --maximum-zoom=12 --simplification=10 --no-tile-size-limit -l layer_name input.geojson`

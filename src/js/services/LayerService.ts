@@ -124,7 +124,7 @@ export default class LayerService {
     // ── PMTiles layer for restrictions (vector tiles) ──
     async loadDroneRestrictionsPMTiles(pane?: string): Promise<L.Layer> {
         const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
-        const url = `${window.location.origin}${baseUrl}data/restrictions_sia.pmtiles`;
+        const url = `${baseUrl}data/restrictions_sia.pmtiles`;
 
         const self = this;
 
@@ -160,7 +160,7 @@ export default class LayerService {
     // ── PMTiles layer for allowed zones (vector tiles) ──
     async loadAllowedZonesPMTiles(pane?: string): Promise<L.Layer> {
         const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
-        const url = `${window.location.origin}${baseUrl}data/allowed_zones.pmtiles`;
+        const url = `${baseUrl}data/allowed_zones.pmtiles`;
 
         const self = this;
 
@@ -217,62 +217,8 @@ export default class LayerService {
         return layer;
     }
 
-    // ── GeoJSON fallback loaders (kept for compatibility) ──
-    async loadDroneRestrictionsLayer(options: L.GeoJSONOptions = {}): Promise<L.GeoJSON> {
-        const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
-        const response = await fetch(`${baseUrl}data/restrictions_sia.geojson?v=${Date.now()}`);
-        if (!response.ok) {
-            throw new Error(`Failed to load restrictions: ${response.statusText}`);
-        }
-        const data = await response.json();
-        return this.createStyledGeoJSONLayer(data, options);
-    }
+    // GeoJSON fallback loaders removed — PMTiles is the sole data path.
 
-    async loadAllowedZonesLayer(options: L.GeoJSONOptions = {}): Promise<L.GeoJSON> {
-        const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
-        const response = await fetch(`${baseUrl}data/allowed_zones.geojson?v=${Date.now()}`);
-        if (!response.ok) {
-            throw new Error(`Failed to load allowed zones: ${response.statusText}`);
-        }
-        const data = await response.json();
-
-        return L.geoJSON(data, {
-            ...options,
-            style: () => ({
-                color: '#3498db',
-                fillColor: '#3498db',
-                weight: 2,
-                opacity: 0.6,
-                fillOpacity: 0.15
-            }),
-            onEachFeature: (_feature, layer) => {
-                const popupContent = `
-                    <div class="restriction-popup" style="min-width: 220px;">
-                        <div class="restriction-header" style="background: #3498db; color: white; padding: 8px; border-radius: 4px 4px 0 0; font-weight: bold; display: flex; align-items: center;">
-                            <span class="material-symbols-outlined" style="margin-right: 6px;">explore</span>
-                            Hors zone réglementée SIA
-                        </div>
-                        <div class="restriction-body" style="padding: 8px; background: rgba(255,255,255,0.95); border-radius: 0 0 4px 4px;">
-                            <div style="margin-bottom: 6px; display: flex; align-items: center;">
-                                <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 4px; color: #666;">vertical_align_top</span>
-                                <strong>Hauteur max:</strong> 120m
-                            </div>
-                            <div style="font-size: 0.9em; color: #666;">Catégorie Ouverte - A1/A2/A3</div>
-                            <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 6px; margin-top: 8px; font-size: 0.85em; display: flex; align-items: flex-start;">
-                                <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px; color: #856404; flex-shrink: 0;">warning</span>
-                                <span style="color: #856404;">Vérifiez les règles locales : <strong>survol de zones urbaines</strong>, propriétés privées, rassemblements de personnes.</span>
-                            </div>
-                            <div style="font-size: 0.8em; color: #999; margin-top: 8px; display: flex; align-items: center;">
-                                <span class="material-symbols-outlined" style="font-size: 14px; margin-right: 4px;">gavel</span>
-                                Réglementation UE 2019/947
-                            </div>
-                        </div>
-                    </div>
-                `;
-                (layer as L.Path).bindPopup(popupContent, { className: 'restriction-popup-container' });
-            }
-        });
-    }
 
     async loadGeoJSONFromFile(filePath: string): Promise<L.GeoJSON> {
         try {
