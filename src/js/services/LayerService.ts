@@ -1,5 +1,6 @@
 import L from 'leaflet';
-import 'leaflet-pmtiles-layer';
+import pmtilesVectorGrid from '../utils/PMTilesVectorGrid';
+
 
 
 
@@ -130,11 +131,10 @@ export default class LayerService {
 
         const self = this;
 
-        // @ts-ignore - L.pmtilesLayer is added by leaflet-pmtiles-layer
-        const layer = L.pmtilesLayer(url, {
+        // Use custom PMTiles adapter with Gzip support (fixes GitHub Pages & Firefox)
+        const layer = pmtilesVectorGrid(url, {
             pane: pane || 'overlayPane',
             interactive: true,
-            autoScale: 'pmtiles',
             vectorTileLayerStyles: {
                 restrictions: (properties: any) => {
                     return self.getStyleFromProperties(properties);
@@ -166,18 +166,21 @@ export default class LayerService {
 
         const self = this;
 
-        // @ts-ignore - L.pmtilesLayer is added by leaflet-pmtiles-layer
-        const layer = L.pmtilesLayer(url, {
+        // Use custom PMTiles adapter with Gzip support
+        const layer = pmtilesVectorGrid(url, {
             pane: pane || 'overlayPane',
             interactive: true,
-            autoScale: 'pmtiles',
-            style: { // L.pmtilesLayer uses 'style' instead of vectorTileLayerStyles if it wants to apply to all features
-                color: '#3498db',
-                fillColor: '#3498db',
-                fill: true,
-                weight: 2,
-                opacity: 0.6,
-                fillOpacity: 0.15
+            vectorTileLayerStyles: {
+                // Must specify layer name (usually 'layer_name' or similar from tippecanoe)
+                // If tippecanoe was run with '-l allowed_zones', then key is 'allowed_zones'
+                allowed_zones: {
+                    color: '#3498db',
+                    fillColor: '#3498db',
+                    fill: true,
+                    weight: 2,
+                    opacity: 0.6,
+                    fillOpacity: 0.15
+                }
             },
             maxNativeZoom: 10,
             maxZoom: 18,
