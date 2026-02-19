@@ -1,5 +1,6 @@
 import L from 'leaflet';
-import 'leaflet-pmtiles-layer';
+import pmtilesVectorGrid from '../utils/PMTilesVectorGrid';
+
 
 // Config unused
 // import Config from '../config/config';
@@ -128,11 +129,10 @@ export default class LayerService {
 
         const self = this;
 
-        // @ts-ignore - L.pmtilesLayer is added by leaflet-pmtiles-layer
-        const layer = L.pmtilesLayer(url, {
+        // Use custom PMTiles adapter for Firefox compatibility
+        const layer = pmtilesVectorGrid(url, {
             pane: pane || 'overlayPane',
             interactive: true,
-            autoScale: 'pmtiles',
             vectorTileLayerStyles: {
                 restrictions: (properties: any) => {
                     return self.getStyleFromProperties(properties);
@@ -164,18 +164,25 @@ export default class LayerService {
 
         const self = this;
 
-        // @ts-ignore - L.pmtilesLayer is added by leaflet-pmtiles-layer
-        const layer = L.pmtilesLayer(url, {
+        // Use custom PMTiles adapter
+        const layer = pmtilesVectorGrid(url, {
             pane: pane || 'overlayPane',
             interactive: true,
-            autoScale: 'pmtiles',
-            style: {
-                color: '#3498db',
-                fillColor: '#3498db',
-                fill: true,
-                weight: 2,
-                opacity: 0.6,
-                fillOpacity: 0.15
+            vectorTileLayerStyles: {
+                // Must specify layer name (usually 'layer_name' or similar from tippecanoe)
+                // If tippecanoe was run with '-l allowed_zones', then key is 'allowed_zones'
+                // If default, it might be 'output' or filename. 
+                // Wait, L.pmtilesLayer 'style' option applied to all.
+                // VectorGrid requires specific layer names or a global configuration?
+                // VectorGrid.Protobuf options: vectorTileLayerStyles
+                allowed_zones: {
+                    color: '#3498db',
+                    fillColor: '#3498db',
+                    fill: true,
+                    weight: 2,
+                    opacity: 0.6,
+                    fillOpacity: 0.15
+                }
             },
             maxNativeZoom: 10,
             maxZoom: 18,

@@ -45,17 +45,18 @@ Les librairies utilisées pour la gestion de la carte interactive et des donnée
 
 - **Lien** : [https://github.com/onaci/leaflet-velocity](https://github.com/onaci/leaflet-velocity)
 
-### leaflet-pmtiles-layer (+ Leaflet.VectorGrid)
+### PMTiles Adapter
 
-**Rôle** : Rendu de tuiles vectorielles PMTiles dans Leaflet.
-**Pourquoi** : Remplace le chargement GeoJSON brut (21 MB en mémoire, 3627 polygones) par des tuiles vectorielles chargées progressivement. Résultat : pan/zoom fluide même avec des milliers de polygones.
-**Fonctionnement** :
+**Rôle** : Chargement custom des tuiles PMTiles pour Leaflet.VectorGrid.
+**Fichier** : `src/js/utils/PMTilesVectorGrid.ts`
+**Pourquoi** : Le plugin existant `leaflet-pmtiles-layer` a des problèmes de compatibilité avec Firefox (Range requests/Cache API) et PMTiles v3. Nous utilisons donc un adaptateur sur-mesure utilisant la librairie officielle `pmtiles` v4.
+**Dépendances** :
 
-- Lit les fichiers `.pmtiles` via HTTP Range Requests (pas de serveur de tuiles).
-- Basé sur `Leaflet.VectorGrid` pour le rendu Canvas des géométries vectorielles.
-- Stylisation dynamique par feature via `vectorTileLayerStyles`.
+- `pmtiles` (API officielle)
+- `leaflet.vectorgrid` (Moteur de rendu)
+- `pbf` & `vector-tile` (Parsing des tuiles)
 
-- **Liens** : [leaflet-pmtiles-layer](https://github.com/eliotjordan/Leaflet.PMTilesLayer), [Leaflet.VectorGrid](https://github.com/Leaflet/Leaflet.VectorGrid)
+- **Liens** : [PMTiles JS](https://github.com/protomaps/PMTiles/tree/main/js), [Leaflet.VectorGrid](https://github.com/Leaflet/Leaflet.VectorGrid)
 
 ## Services Externes
 
