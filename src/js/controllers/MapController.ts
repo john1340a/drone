@@ -258,15 +258,52 @@ export default class MapController {
         const map = this.mapService.getMap();
         if (!map) return;
 
-        map.on('click', async (_e: L.LeafletMouseEvent) => {
+        map.on('click', (e: L.LeafletMouseEvent) => {
             const zoom = map.getZoom();
 
-            // Only query if zoom is high enough for meaningful detail
+            // Uniquement si on a un niveau de zoom décent pour éviter les clics accidentels
             if (zoom < 8) return;
 
-            // Note: With PMTiles/VectorGrid, restriction popups are handled
-            // directly by the VectorGrid click events in LayerService.
-            // This handler is kept for potential future map-level click logic.
+            // Ce handler "fallback" ne s'exécute que si le clic n'a pas été intercepté 
+            // par une couche de restriction interactive (qui appelle stopPropagation).
+            
+            const popupContent = `
+                <div class="restriction-popup">
+                    <div class="restriction-header" style="background: #2ecc71; color: white; padding: 10px; border-radius: 4px 4px 0 0; font-weight: bold; display: flex; align-items: center;">
+                        <span class="material-symbols-outlined" style="margin-right: 6px;">check_circle</span>
+                        Vol Autorisé
+                    </div>
+                    <div class="restriction-body" style="padding: 12px; background: white; border-radius: 0 0 4px 4px;">
+                        <div style="margin-bottom: 10px; display: flex; align-items: center;">
+                            <span class="material-symbols-outlined" style="font-size: 20px; margin-right: 8px; color: #27ae60;">vertical_align_top</span>
+                            <strong>Hauteur max :</strong> 120m
+                        </div>
+                        <div style="font-size: 0.95em; color: #444; margin-bottom: 12px;">
+                            Pas de restriction spécifique détectée. Catégorie Ouverte (A1/A2/A3).
+                        </div>
+                        <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 10px; font-size: 0.85em; display: flex; align-items: flex-start; gap: 8px; color: #856404;">
+                            <span class="material-symbols-outlined" style="font-size: 18px; flex-shrink: 0;">warning</span>
+                            <span>Respectez les règles : pas de survol de l'espace public en agglomération, ni de personnes, ni de sites sensibles.</span>
+                        </div>
+                        <div style="font-size: 0.8em; color: #999; margin-top: 12px; display: flex; align-items: center;">
+                            <span class="material-symbols-outlined" style="font-size: 14px; margin-right: 4px;">gavel</span>
+                            Réglementation Européenne
+                        </div>
+                    </div>
+                    <a href="https://www.ecologie.gouv.fr/politiques-publiques/guides-exploitants-daeronefs" 
+                       target="_blank" 
+                       rel="noopener" 
+                       class="restriction-link"
+                       style="display: block; text-align: center; padding: 10px; background: #f8f9fa; border-top: 1px solid #eee; text-decoration: none; color: #2185d0; font-weight: 500; font-size: 0.9em; border-radius: 0 0 4px 4px;">
+                        📖 Guides exploitants DGAC →
+                    </a>
+                </div>
+            `;
+
+            L.popup({ className: 'restriction-popup-container' })
+                .setLatLng(e.latlng)
+                .setContent(popupContent)
+                .openOn(map);
         });
     }
 

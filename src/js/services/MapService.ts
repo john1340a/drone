@@ -47,11 +47,26 @@ export default class MapService {
 
         attributionControl.addAttribution('&copy; <a href="https://open-meteo.com/" target="_blank">Open-Meteo</a>');
 
-        // Créer un pane personnalisé pour les overlays (au-dessus des basemaps)
+        // Créer les panes dans l'ordre de superposition (au-dessus des basemaps qui sont à 200)
+        // Les zones autorisées sont au plus bas
+        this.map.createPane('allowedPane');
+        const allowedPane = this.map.getPane('allowedPane');
+        if (allowedPane) {
+            allowedPane.style.zIndex = '410'; 
+        }
+
+        // Les restrictions sont au-dessus des zones autorisées
+        this.map.createPane('restrictionPane');
+        const restrictionPane = this.map.getPane('restrictionPane');
+        if (restrictionPane) {
+            restrictionPane.style.zIndex = '420'; 
+        }
+
+        // Pane général optionnel
         this.map.createPane('overlayPane');
         const overlayPane = this.map.getPane('overlayPane');
         if (overlayPane) {
-            overlayPane.style.zIndex = '450'; // Au-dessus des tile layers (zIndex 200)
+            overlayPane.style.zIndex = '450'; 
         }
 
         this._setupBaseLayers();

@@ -147,6 +147,11 @@ export default class LayerService {
         // Bind click popup for vector tile features
         layer.on('click', (e: any) => {
             if (e.layer && e.layer.properties && self._map) {
+                // Prevent bubbling to map click handler
+                if (e.originalEvent) {
+                    L.DomEvent.stopPropagation(e.originalEvent);
+                }
+
                 const props = e.layer.properties;
                 const popupContent = self._buildRestrictionPopupHTML(props);
                 L.popup({ className: 'restriction-popup-container' })
@@ -168,18 +173,18 @@ export default class LayerService {
 
         // Use custom PMTiles adapter with Gzip support
         const layer = pmtilesVectorGrid(url, {
-            pane: pane || 'overlayPane',
+            pane: pane || 'allowedPane',
             interactive: true,
             vectorTileLayerStyles: {
-                // Must specify layer name (usually 'layer_name' or similar from tippecanoe)
-                // If tippecanoe was run with '-l allowed_zones', then key is 'allowed_zones'
-                allowed_zones: {
-                    color: '#3498db',
-                    fillColor: '#3498db',
-                    fill: true,
-                    weight: 2,
-                    opacity: 0.6,
-                    fillOpacity: 0.15
+                restrictions: (properties: any) => {
+                    return {
+                        color: '#2ecc71',
+                        weight: 1,
+                        opacity: 0.5,
+                        fillColor: '#2ecc71',
+                        fill: true,
+                        fillOpacity: 0.2
+                    };
                 }
             },
             maxNativeZoom: 10,
@@ -188,30 +193,13 @@ export default class LayerService {
 
         // Bind click popup for allowed zones
         layer.on('click', (e: any) => {
-            const popupContent = `
-                <div class="restriction-popup" style="min-width: 220px;">
-                    <div class="restriction-header" style="background: #3498db; color: white; padding: 8px; border-radius: 4px 4px 0 0; font-weight: bold; display: flex; align-items: center;">
-                        <span class="material-symbols-outlined" style="margin-right: 6px;">explore</span>
-                        Hors zone réglementée SIA
-                    </div>
-                    <div class="restriction-body" style="padding: 8px; background: rgba(255,255,255,0.95); border-radius: 0 0 4px 4px;">
-                        <div style="margin-bottom: 6px; display: flex; align-items: center;">
-                            <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 4px; color: #666;">vertical_align_top</span>
-                            <strong>Hauteur max:</strong> 120m
-                        </div>
-                        <div style="font-size: 0.9em; color: #666;">Catégorie Ouverte - A1/A2/A3</div>
-                        <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 6px; margin-top: 8px; font-size: 0.85em; display: flex; align-items: flex-start;">
-                            <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px; color: #856404; flex-shrink: 0;">warning</span>
-                            <span style="color: #856404;">Vérifiez les règles locales : <strong>survol de zones urbaines</strong>, propriétés privées, rassemblements de personnes.</span>
-                        </div>
-                        <div style="font-size: 0.8em; color: #999; margin-top: 8px; display: flex; align-items: center;">
-                            <span class="material-symbols-outlined" style="font-size: 14px; margin-right: 4px;">gavel</span>
-                            Réglementation UE 2019/947
-                        </div>
-                    </div>
-                </div>
-            `;
             if (self._map) {
+                // Prevent bubbling to map click handler
+                if (e.originalEvent) {
+                    L.DomEvent.stopPropagation(e.originalEvent);
+                }
+
+                const popupContent = self._buildAllowedZonePopupHTML();
                 L.popup({ className: 'restriction-popup-container' })
                     .setLatLng(e.latlng)
                     .setContent(popupContent)
@@ -220,6 +208,41 @@ export default class LayerService {
         });
 
         return layer;
+    }
+
+    private _buildAllowedZonePopupHTML(): string {
+        return `
+            <div class="restriction-popup">
+                <div class="restriction-header" style="background: #2ecc71; color: white; padding: 10px; border-radius: 4px 4px 0 0; font-weight: bold; display: flex; align-items: center;">
+                    <span class="material-symbols-outlined" style="margin-right: 6px;">check_circle</span>
+                    Vol Autorisé
+                </div>
+                <div class="restriction-body" style="padding: 12px; background: white; border-radius: 0 0 4px 4px;">
+                    <div style="margin-bottom: 10px; display: flex; align-items: center;">
+                        <span class="material-symbols-outlined" style="font-size: 20px; margin-right: 8px; color: #27ae60;">vertical_align_top</span>
+                        <strong>Hauteur max :</strong> 120m
+                    </div>
+                    <div style="font-size: 0.95em; color: #444; margin-bottom: 12px;">
+                        Pas de restriction spécifique détectée. Catégorie Ouverte (A1/A2/A3).
+                    </div>
+                    <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 10px; font-size: 0.85em; display: flex; align-items: flex-start; gap: 8px; color: #856404;">
+                        <span class="material-symbols-outlined" style="font-size: 18px; flex-shrink: 0;">warning</span>
+                        <span>Respectez les règles : pas de survol de l'espace public en agglomération, ni de personnes, ni de sites sensibles.</span>
+                    </div>
+                    <div style="font-size: 0.8em; color: #999; margin-top: 12px; display: flex; align-items: center;">
+                        <span class="material-symbols-outlined" style="font-size: 14px; margin-right: 4px;">gavel</span>
+                        Réglementation Européenne
+                    </div>
+                </div>
+                <a href="https://www.ecologie.gouv.fr/politiques-publiques/guides-exploitants-daeronefs" 
+                   target="_blank" 
+                   rel="noopener" 
+                   class="restriction-link"
+                   style="display: block; text-align: center; padding: 10px; background: #f8f9fa; border-top: 1px solid #eee; text-decoration: none; color: #2185d0; font-weight: 500; font-size: 0.9em; border-radius: 0 0 4px 4px;">
+                    📖 Guides exploitants DGAC →
+                </a>
+            </div>
+        `;
     }
 
     // GeoJSON fallback loaders removed — PMTiles is the sole data path.
