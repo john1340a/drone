@@ -176,7 +176,7 @@ export default class LayerService {
             pane: pane || 'allowedPane',
             interactive: true,
             vectorTileLayerStyles: {
-                restrictions: (properties: any) => {
+                restrictions: () => {
                     return {
                         color: '#2ecc71',
                         weight: 1,
