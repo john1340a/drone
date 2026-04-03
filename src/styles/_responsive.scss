@@ -11,10 +11,29 @@
     padding: 6px 10px;
   }
 
-  /* Geocoder compact */
-  .geocoder-control input {
-    width: 160px !important;
-    font-size: $font-size-sm;
+  /* Geocoder — prevent iOS zoom (font-size >= 16px) + adapt width */
+  .geocoder-control {
+    .geocoder-wrapper {
+      width: 36px;
+
+      input {
+        font-size: 16px !important; /* Prevents iOS auto-zoom on focus */
+      }
+
+      &:hover,
+      &.expanded,
+      &:focus-within {
+        width: 200px;
+
+        input {
+          width: 150px;
+        }
+      }
+    }
+
+    .geocoder-results {
+      min-width: 200px;
+    }
   }
 
   /* Basemap smaller */
@@ -57,7 +76,35 @@
     .layer-control-panel {
       min-width: 160px;
       padding: 8px 10px;
+      /* Prevent overflow on the right — open to the left */
+      right: calc(100% + 6px);
+      max-width: calc(100vw - 80px);
     }
+  }
+
+  /* DOM-TOM — prevent dropdown overflow */
+  .domtom-geocoder {
+    .select-trigger {
+      width: 36px;
+      padding: 6px;
+
+      &:hover,
+      .custom-select.active & {
+        width: 160px;
+        padding: 6px 10px;
+      }
+    }
+
+    .select-options {
+      right: 0;
+      left: auto;
+      max-width: calc(100vw - 80px);
+    }
+  }
+
+  .select-option {
+    padding: 8px 12px;
+    font-size: $font-size-sm;
   }
 
   /* Weather compact */
@@ -68,23 +115,6 @@
     .weather-value {
       font-size: 15px;
     }
-  }
-
-  /* DOM-TOM trigger */
-  .select-trigger {
-    width: 36px;
-    padding: 6px;
-
-    &:hover,
-    .custom-select.active & {
-      width: 160px;
-      padding: 6px 10px;
-    }
-  }
-
-  .select-option {
-    padding: 8px 12px;
-    font-size: $font-size-sm;
   }
 
   /* Minimap smaller */
@@ -107,6 +137,11 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
+  /* Prevent top-right controls from overflowing */
+  .maplibregl-ctrl-top-right {
+    max-width: calc(100vw - 60px);
+  }
 }
 
 /* Desktop — legend always visible */
@@ -126,13 +161,27 @@
 
 /* Very small screens */
 @media screen and (max-width: 480px) {
-  .geocoder-control input {
-    width: 130px !important;
-  }
-
   .map-title-control {
     font-size: $font-size-xs;
     padding: 5px 8px;
+  }
+
+  .geocoder-control {
+    .geocoder-wrapper {
+      &:hover,
+      &.expanded,
+      &:focus-within {
+        width: 170px;
+
+        input {
+          width: 120px;
+        }
+      }
+    }
+
+    .geocoder-results {
+      min-width: 170px;
+    }
   }
 
   .minimap-container {
@@ -155,5 +204,6 @@
 @media print {
   #map {
     height: 100vh !important;
+    position: static !important;
   }
 }

@@ -82,7 +82,7 @@ export default class BasemapSwitcher implements maplibregl.IControl {
 
         // Update thumbnail to show the OTHER basemap option
         if (this.container) {
-            const img = this.container.querySelector('.basemap-thumbnail') as HTMLImageElement;
+            const img = this.container.querySelector('.basemap-toggle-btn img') as HTMLImageElement;
             if (img) {
                 const nextBasemap = this.currentBasemap === 'jawg' ? 'satellite' : 'jawg';
                 img.src = nextBasemap === 'satellite' ? satelliteImage : osmImage;

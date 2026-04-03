@@ -185,6 +185,16 @@ export default class MapController {
                 `;
                 c.addEventListener('click', (e) => e.stopPropagation());
 
+                // Toggle panel on icon click
+                const icon = c.querySelector('.layer-control-icon');
+                icon?.addEventListener('click', () => {
+                    const isOpen = c.classList.toggle('expanded');
+                    // Close DOM-TOM if open
+                    if (isOpen) {
+                        document.getElementById('domtom-select')?.classList.remove('active');
+                    }
+                });
+
                 setTimeout(() => {
                     const tr = c.querySelector('#toggle-restrictions') as HTMLInputElement;
                     const ta = c.querySelector('#toggle-allowed') as HTMLInputElement;
@@ -379,7 +389,7 @@ export default class MapController {
                         <div class="geocoder-icon">
                             <span class="material-symbols-outlined">search</span>
                         </div>
-                        <input type="text" id="geocoder-input" placeholder="Rechercher une adresse..." />
+                        <input type="text" id="geocoder-input" placeholder="${window.innerWidth <= 768 ? 'Rechercher...' : 'Rechercher une adresse...'}" />
                     </div>
                     <div class="geocoder-results" id="geocoder-results"></div>
                 `;
@@ -548,7 +558,14 @@ export default class MapController {
         const trigger = cs.querySelector('.select-trigger');
         if (!trigger) return;
 
-        trigger.addEventListener('click', (e) => { e.stopPropagation(); cs.classList.toggle('active'); });
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = cs.classList.toggle('active');
+            // Close layer control if open
+            if (isOpen) {
+                document.querySelector('.layer-control')?.classList.remove('expanded');
+            }
+        });
 
         cs.querySelectorAll('.select-option').forEach(opt => {
             opt.addEventListener('click', (e) => {
@@ -559,7 +576,10 @@ export default class MapController {
             });
         });
 
-        document.addEventListener('click', () => cs.classList.remove('active'));
+        document.addEventListener('click', () => {
+            cs.classList.remove('active');
+            document.querySelector('.layer-control')?.classList.remove('expanded');
+        });
     }
 
     navigateToTerritory(territoryKey: string): void {
