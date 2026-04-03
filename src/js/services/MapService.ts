@@ -1,166 +1,103 @@
-import L from 'leaflet';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { Protocol } from 'pmtiles';
 import Config from '../config/config';
 
+// Register PMTiles protocol once
+const protocol = new Protocol();
+maplibregl.addProtocol('pmtiles', protocol.tile);
+
 export default class MapService {
-    private map: L.Map | null;
-    private baseLayers: Record<string, L.TileLayer>;
-    private overlayLayers: Record<string, L.Layer>;
-    private currentBaseLayer: L.TileLayer | null;
+    private map: maplibregl.Map | null;
+    private currentBasemap: string;
 
     constructor() {
         this.map = null;
-        this.baseLayers = {};
-        this.overlayLayers = {};
-        this.currentBaseLayer = null;
+        this.currentBasemap = 'osm';
     }
 
-    initializeMap(containerId: string): L.Map {
+    initializeMap(containerId: string): maplibregl.Map {
         const config = Config.MAP_CONFIG;
+        const baseMaps = Config.LAYERS_CONFIG.baseMaps;
 
-        this.map = L.map(containerId, {
-            center: config.center as L.LatLngExpression,
+        this.map = new maplibregl.Map({
+            container: containerId,
+            style: {
+                version: 8,
+                sources: {
+                    'jawg-raster': {
+                        type: 'raster',
+                        tiles: baseMaps.jawg.tiles,
+                        tileSize: baseMaps.jawg.tileSize,
+                        attribution: baseMaps.jawg.attribution,
+                        maxzoom: baseMaps.jawg.maxzoom
+                    },
+                    'satellite-raster': {
+                        type: 'raster',
+                        tiles: baseMaps.satellite.tiles,
+                        tileSize: baseMaps.satellite.tileSize,
+                        attribution: baseMaps.satellite.attribution,
+                        maxzoom: baseMaps.satellite.maxzoom
+                    }
+                },
+                layers: [
+                    {
+                        id: 'jawg-layer',
+                        type: 'raster',
+                        source: 'jawg-raster',
+                        layout: { visibility: 'visible' }
+                    },
+                    {
+                        id: 'satellite-layer',
+                        type: 'raster',
+                        source: 'satellite-raster',
+                        layout: { visibility: 'none' }
+                    }
+                ]
+            },
+            center: config.center,
             zoom: config.zoom,
             minZoom: config.minZoom,
             maxZoom: config.maxZoom,
-            preferCanvas: true, // Canvas renderer for vector layers (much faster with 3600+ polygons)
-            zoomControl: false, // Désactiver le contrôle par défaut pour le repositionner
-            attributionControl: false, // On le recrée manuellement pour enlever le préfixe
-
-            // Panning fluide style OpenLayers / Lizmap
-            inertia: true,
-            inertiaDeceleration: 1500,    // Moins de friction = le pan glisse plus loin (défaut: 3000)
-            inertiaMaxSpeed: 3000,        // Vitesse max plus élevée (défaut: Infinity mais bridé)
-            easeLinearity: 0.25,          // Courbe d'accélération plus douce (défaut: 0.2)
-            worldCopyJump: true,          // Transition fluide aux bords du monde
-
-            // Zoom fluide
-            wheelPxPerZoomLevel: 90,      // Plus de pixels de scroll par niveau de zoom = zoom moins brusque (défaut: 60)
-            zoomSnap: 0.5,                // Permet des demi-niveaux de zoom pour plus de fluidité
-            zoomDelta: 0.5,               // Chaque clic de scroll = 0.5 zoom au lieu de 1
-            wheelDebounceTime: 60,        // Délai entre les événements de scroll (défaut: 40)
+            attributionControl: false
         });
 
-        // Ajouter l'attribution sans le préfixe "Leaflet" pour gagner de la place sur mobile
-        const attributionControl = L.control.attribution({
-            prefix: false
-        }).addTo(this.map);
-
-        attributionControl.addAttribution('&copy; <a href="https://open-meteo.com/" target="_blank">Open-Meteo</a>');
-
-        // Créer les panes dans l'ordre de superposition (au-dessus des basemaps qui sont à 200)
-        // Les zones autorisées sont au plus bas
-        this.map.createPane('allowedPane');
-        const allowedPane = this.map.getPane('allowedPane');
-        if (allowedPane) {
-            allowedPane.style.zIndex = '410'; 
-        }
-
-        // Les restrictions sont au-dessus des zones autorisées
-        this.map.createPane('restrictionPane');
-        const restrictionPane = this.map.getPane('restrictionPane');
-        if (restrictionPane) {
-            restrictionPane.style.zIndex = '420'; 
-        }
-
-        // Pane général optionnel
-        this.map.createPane('overlayPane');
-        const overlayPane = this.map.getPane('overlayPane');
-        if (overlayPane) {
-            overlayPane.style.zIndex = '450'; 
-        }
-
-        this._setupBaseLayers();
-        this._setDefaultBaseLayer();
+        this.map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
 
         return this.map;
-    }
-
-    private _setupBaseLayers(): void {
-        const baseMapsConfig = Config.LAYERS_CONFIG.baseMaps;
-
-        Object.entries(baseMapsConfig).forEach(([key, config]) => {
-            // @ts-ignore - config.url can be a string in our structure
-            const url = typeof config.url === 'function' ? config.url() : config.url;
-            this.baseLayers[key] = L.tileLayer(url, config.options);
-        });
-    }
-
-
-
-    private _setDefaultBaseLayer(): void {
-        this.setBaseLayer('osm');
     }
 
     setBaseLayer(layerKey: string): void {
         if (!this.map) return;
 
-        if (this.currentBaseLayer) {
-            this.map.removeLayer(this.currentBaseLayer);
+        // Hide all basemap layers, show the requested one
+        const layers = ['jawg-layer', 'satellite-layer'];
+        const targetId = layerKey === 'satellite' ? 'satellite-layer' : 'jawg-layer';
+
+        for (const id of layers) {
+            this.map.setLayoutProperty(id, 'visibility', id === targetId ? 'visible' : 'none');
         }
 
-        if (this.baseLayers[layerKey]) {
-            this.currentBaseLayer = this.baseLayers[layerKey];
-            this.currentBaseLayer.addTo(this.map);
-        } else {
-            console.warn(`Base layer '${layerKey}' not found`);
-        }
+        this.currentBasemap = layerKey;
     }
 
-    addOverlayLayer(layerKey: string, layer: L.Layer): void {
-        if (!this.map) return;
-
-        if (this.overlayLayers[layerKey]) {
-            this.removeOverlayLayer(layerKey);
-        }
-
-        this.overlayLayers[layerKey] = layer;
-        layer.addTo(this.map);
+    getCurrentBasemap(): string {
+        return this.currentBasemap;
     }
 
-    removeOverlayLayer(layerKey: string): void {
-        if (!this.map) return;
-
-        if (this.overlayLayers[layerKey]) {
-            this.map.removeLayer(this.overlayLayers[layerKey]);
-            delete this.overlayLayers[layerKey];
-        }
-    }
-
-    toggleOverlayLayer(layerKey: string, layer: L.Layer): boolean {
-        if (this.overlayLayers[layerKey]) {
-            this.removeOverlayLayer(layerKey);
-            return false;
-        } else {
-            this.addOverlayLayer(layerKey, layer);
-            return true;
-        }
-    }
-
-    getMap(): L.Map | null {
+    getMap(): maplibregl.Map | null {
         return this.map;
     }
 
-    fitBounds(bounds: L.LatLngBoundsExpression, options: L.FitBoundsOptions = {}): void {
+    fitBounds(bounds: maplibregl.LngLatBoundsLike, options: maplibregl.FitBoundsOptions = {}): void {
         if (this.map) {
             this.map.fitBounds(bounds, options);
         }
     }
 
-    setView(center: L.LatLngExpression, zoom: number): void {
+    setView(center: [number, number], zoom: number): void {
         if (this.map) {
-            this.map.setView(center, zoom);
-        }
-    }
-
-    addControl(control: L.Control): void {
-        if (this.map) {
-            control.addTo(this.map);
-        }
-    }
-
-    removeControl(control: L.Control): void {
-        if (this.map) {
-            this.map.removeControl(control);
+            this.map.flyTo({ center, zoom, duration: 1500 });
         }
     }
 }

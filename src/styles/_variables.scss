@@ -1,29 +1,88 @@
-/* === Variables SCSS === */
-$primary-color: #2185d0;
-$secondary-color: #f2711c;
-$success-color: #21ba45;
-$warning-color: #fbbd08;
-$error-color: #db2828;
+/* === HeroUI-inspired Design Tokens === */
 
+/* Colors — Semantic */
+$primary: #006FEE;
+$primary-light: #338ef7;
+$primary-50: #e6f1fe;
+$secondary: #7828c8;
+$success: #17c964;
+$success-50: #e8faf0;
+$warning: #f5a524;
+$warning-50: #fefce8;
+$danger: #f31260;
+$danger-50: #fee7ef;
+
+/* Neutrals */
+$foreground: #11181c;
+$foreground-secondary: #687076;
+$foreground-tertiary: #889096;
+$background: #ffffff;
+$surface: #f4f4f5;
+$surface-hover: #e4e4e7;
+$border: #e4e4e7;
+$border-light: #f4f4f5;
+$divider: rgba(17, 17, 17, 0.06);
+
+/* Restriction status colors */
+$zone-forbidden: #c0392b;
+$zone-auth-required: #e67e22;
+$zone-restricted: #f39c12;
+$zone-info: #5b7fa5;
+$zone-allowed: #006FEE;
+
+/* Radius — scale */
+$radius-sm: 8px;
+$radius-md: 12px;
+$radius-lg: 14px;
+$radius-xl: 18px;
+
+/* Shadows — HeroUI subtle */
+$shadow-sm: 0px 0px 5px 0px rgba(0, 0, 0, 0.02), 0px 2px 10px 0px rgba(0, 0, 0, 0.06);
+$shadow-md: 0px 0px 15px 0px rgba(0, 0, 0, 0.03), 0px 2px 30px 0px rgba(0, 0, 0, 0.08);
+$shadow-lg: 0px 0px 30px 0px rgba(0, 0, 0, 0.04), 0px 30px 60px 0px rgba(0, 0, 0, 0.12);
+
+/* Glass / Overlay */
+$glass-bg: rgba(255, 255, 255, 0.85);
+$glass-blur: 16px;
+$glass-border: rgba(255, 255, 255, 0.5);
+$overlay-bg: rgba(0, 0, 0, 0.4);
+
+/* Layout */
 $sidebar-width: 300px;
 $header-height: 60px;
 
-$border-radius: 4px;
-$box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-
+/* Breakpoints */
 $breakpoint-mobile: 768px;
 $breakpoint-tablet: 992px;
 
-/* CSS Custom Properties for runtime usage if needed */
-:root {
-  --primary-color: #{$primary-color};
-  --secondary-color: #{$secondary-color};
-  --success-color: #{$success-color};
-  --warning-color: #{$warning-color};
-  --error-color: #{$error-color};
+/* Typography */
+$font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+$font-size-xs: 11px;
+$font-size-sm: 13px;
+$font-size-md: 14px;
+$font-size-lg: 16px;
 
-  --sidebar-width: #{$sidebar-width};
-  --header-height: #{$header-height};
-  --border-radius: #{$border-radius};
-  --box-shadow: #{$box-shadow};
+/* Transitions */
+$transition-fast: 0.15s ease;
+$transition-normal: 0.25s ease;
+
+/* CSS Custom Properties */
+:root {
+  --primary: #{$primary};
+  --primary-light: #{$primary-light};
+  --danger: #{$danger};
+  --success: #{$success};
+  --warning: #{$warning};
+  --foreground: #{$foreground};
+  --background: #{$background};
+  --surface: #{$surface};
+  --border: #{$border};
+  --radius-sm: #{$radius-sm};
+  --radius-md: #{$radius-md};
+  --radius-lg: #{$radius-lg};
+  --shadow-sm: #{$shadow-sm};
+  --shadow-md: #{$shadow-md};
+  --glass-bg: #{$glass-bg};
+  --glass-blur: #{$glass-blur};
+  --font-family: #{$font-family};
 }

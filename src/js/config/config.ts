@@ -1,54 +1,30 @@
 export default class Config {
+    // MapLibre uses [lng, lat] — NOT [lat, lng] like Leaflet
     static get MAP_CONFIG() {
         return {
-            center: [46.603354, 1.888334], // Centre de la France
-            zoom: 6,
-            minZoom: 6, // Zoom minimum pour éviter les 404 inutiles
-            maxZoom: 21, // Augmenté pour supporter zoom jusqu'à 100m
+            center: [1.888334, 46.603354] as [number, number], // Centre de la France [lng, lat]
+            zoom: 5,
+            minZoom: 5,
+            maxZoom: 21,
         };
     }
 
     static get LAYERS_CONFIG() {
         return {
             baseMaps: {
-                osm: {
-                    name: 'OpenStreetMap',
-                    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    options: {
-                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-                        maxZoom: 21,        // Permettre zoom jusqu'à 21
-                        maxNativeZoom: 19   // OSM fournit des tuiles jusqu'à 19, oversampling au-delà
-                    }
+                jawg: {
+                    name: 'Jawg Streets',
+                    tiles: [`https://tile.jawg.io/jawg-streets/{z}/{x}/{y}.png?access-token=${import.meta.env.VITE_JAWG_MAPS_API}`],
+                    tileSize: 256,
+                    attribution: '&copy; <a href="https://www.jawg.io">Jawg</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+                    maxzoom: 22
                 },
                 satellite: {
                     name: 'Satellite',
-                    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-                    options: {
-                        minZoom: 0,
-                        maxZoom: 21,        // Permettre zoom jusqu'à 21
-                        maxNativeZoom: 16,  // On limite à 16 pour garantir l'affichage partout (oversampling au-delà)
-                        attribution: '&copy; <a href="https://www.esri.com/">Esri</a>, Maxar, Earthstar Geographics'
-                    }
-                }
-            },
-            dateLayers: {
-                droneRestrictions: {
-                    name: 'Restrictions drones',
-                    // WMTS - URL exactement comme sur geoportail.gouv.fr
-                    url: 'https://data.geopf.fr/wmts?layer=TRANSPORTS.DRONES.RESTRICTIONS&style=normal&tilematrixset=PM&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/png&TileMatrix={z}&TileCol={x}&TileRow={y}',
-                    options: {
-                        attribution: '&copy; <a href="https://www.ign.fr/">IGN</a> - G&eacute;oplateforme - Restrictions Drones',
-                        transparent: true,
-                        opacity: 0.8,
-                        minZoom: 0,
-                        maxZoom: 21,        // Zoom jusqu'à 21 (≈5m)
-                        maxNativeZoom: 11,  // On force l'utilisation des tuiles de niveau 11 pour tous les zooms supérieurs
-                        tileSize: 256,
-                        updateWhenIdle: false,
-                        updateWhenZooming: true,
-                        keepBuffer: 4,
-                        pane: 'overlayPane'  // Afficher au-dessus des basemaps
-                    }
+                    tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+                    tileSize: 256,
+                    attribution: '&copy; <a href="https://www.esri.com/">Esri</a>, Maxar, Earthstar Geographics',
+                    maxzoom: 17
                 }
             }
         };
@@ -58,27 +34,27 @@ export default class Config {
         return {
             metropole: {
                 name: 'Métropole',
-                center: [46.603354, 1.888334],
-                zoom: 6
+                center: [1.888334, 46.603354] as [number, number],
+                zoom: 5
             },
             antilles: {
                 name: 'Antilles',
-                center: [16.28, -61.31],
-                zoom: 8  // Zoom réduit pour voir toute l'emprise
+                center: [-61.31, 16.28] as [number, number],
+                zoom: 8
             },
             guyane: {
                 name: 'Guyane',
-                center: [3.9339, -53.1258],
+                center: [-53.1258, 3.9339] as [number, number],
                 zoom: 8
             },
             reunion: {
                 name: 'Réunion',
-                center: [-21.1151, 55.5364],
+                center: [55.5364, -21.1151] as [number, number],
                 zoom: 11
             },
             mayotte: {
                 name: 'Mayotte',
-                center: [-12.8275, 45.1662],
+                center: [45.1662, -12.8275] as [number, number],
                 zoom: 11
             }
         };
@@ -101,14 +77,11 @@ export default class Config {
     }
 
     static get ANALYTICS_CONFIG() {
-        // Récupérer l'ID depuis les variables d'environnement Vite
         const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID || '';
-
 
         return {
             measurementId: measurementId,
             enabled: !!measurementId && measurementId !== '',
-            // Événements à tracker
             events: {
                 mapInteraction: true,
                 layerToggle: true,

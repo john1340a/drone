@@ -2,34 +2,34 @@
 
 Application web SIG responsive pour visualiser les zones de vol de drone en France (restrictions, autorisations, informations).
 
-## 📚 Documentation
+## Documentation
 
-La documentation détaillée technique est disponible dans le dossier [`docs/`](./docs):
+La documentation technique est disponible dans le dossier [`docs/`](./docs) :
 
 - **[Architecture](./docs/architecture/overview.md)** : Structure du code, Design Patterns (MVC).
-- **[Stack Technique](./docs/libs/core.md)** : Vite, TypeScript, Build.
-- **[Cartographie](./docs/libs/mapping.md)** : Leaflet, IGN Geoportail, Plugins.
-- **[Interface UI](./docs/libs/ui.md)** : Fomantic UI, SASS, Icons.
-- **[Migration SIA](./docs/migration_sia.md)** : Données ED-269, conversion, logique de couleurs.
+- **[Stack Technique](./docs/libs/core.md)** : Vite, TypeScript, MapLibre GL JS.
+- **[Cartographie](./docs/libs/mapping.md)** : MapLibre, PMTiles, Jawg Maps.
+- **[Interface UI](./docs/libs/ui.md)** : Design system HeroUI, SASS, Material Symbols.
+- **[Migration SIA](./docs/migration_sia.md)** : Donnees ED-269, conversion, logique de couleurs.
 
-## 🌍 Données & Cartographie
+## Donnees & Cartographie
 
-- **Restrictions Drone** : Données officielles **SIA (ED-269)** optimisées en **tuiles vectorielles PMTiles** (`public/data/restrictions_sia.pmtiles`).
-  - **Mise à jour** : Script `convert_sia_to_geojson.js` + conversion PMTiles via `tippecanoe` (WSL).
+- **Restrictions Drone** : Donnees officielles **SIA (ED-269)** optimisees en **tuiles vectorielles PMTiles** (`public/data/restrictions_sia.pmtiles`).
+  - **Mise a jour** : Script `convert_sia_to_geojson.js` + conversion PMTiles via `tippecanoe` (WSL).
   - **Visualisation** :
-    - 🔵 Bleu : Hors zone réglementée SIA
-    - 🔴 Rouge : Interdit
-    - 🟠 Orange : Autorisation requise
-    - 🟡 Ambre/Jaune : Restreint / Conditionnel
-    - 🔵 Bleu acier : Information (> 120m, non applicable)
+    - Bleu (`#006FEE`) : Hors zone reglementee SIA
+    - Rouge (`#c0392b`) : Interdit
+    - Orange (`#e67e22`) : Autorisation requise
+    - Ambre/Jaune (`#f39c12`) : Restreint / Conditionnel
+    - Bleu acier (`#5b7fa5`) : Information (> 120m, non applicable)
 - **Zones hors restriction SIA** : Couche bleue en tuiles vectorielles (`public/data/allowed_zones.pmtiles`).
-- **Fonds de carte** : OSM, IGN Plan, IGN Satellite via Leaflet.
+- **Fonds de carte** : Jawg Streets (principal), Esri Satellite.
 
-> ⚠️ **Attention** : Les zones urbaines nécessitant une autorisation préfectorale ne sont pas cartographiées. Vérifiez toujours les règles locales.
+> **Attention** : Les zones urbaines necessitant une autorisation prefectorale ne sont pas cartographiees. Verifiez toujours les regles locales.
 
-## 🚀 Démarrage Rapide
+## Demarrage Rapide
 
-### Prérequis
+### Prerequis
 
 - Node.js (v18+)
 - NPM
@@ -40,7 +40,7 @@ La documentation détaillée technique est disponible dans le dossier [`docs/`](
 # Installation
 npm install
 
-# Mode développement
+# Mode developpement
 npm run dev
 
 # Construction pour production
@@ -48,6 +48,15 @@ npm run build
 ```
 
 L'application sera accessible sur `http://localhost:3000/drone/`.
+
+### Variables d'environnement
+
+Creer un fichier `.env` a la racine :
+
+```
+VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX
+VITE_JAWG_MAPS_API=votre_token_jawg
+```
 
 ## Licence
 

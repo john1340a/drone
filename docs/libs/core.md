@@ -1,43 +1,38 @@
 # Core & Build Tools
 
-Ce document détaille les technologies fondamentales utilisées pour la construction et l'exécution de l'application.
+Technologies fondamentales utilisees pour la construction et l'execution de l'application.
 
 ## Vite
 
-**Rôle** : Bundler et Serveur de développement.
-**Pourquoi** : Vite offre des performances exceptionnelles comparé à Webpack, avec un démarrage instantané du serveur (grâce aux modules ES natifs) et une compilation de production ultra-optimisée (Rollup).
+**Role** : Bundler et serveur de developpement.
+**Pourquoi** : Demarrage instantane (modules ES natifs), HMR ultra-rapide, build production optimise (Rollup).
 
 - **Documentation** : [https://vitejs.dev/](https://vitejs.dev/)
 - **Configuration** : [`vite.config.ts`](../../vite.config.ts)
+- **Base path** : `/drone/` (pour GitHub Pages)
 
 ## TypeScript
 
-**Rôle** : Langage de programmation.
-**Pourquoi** : Apporte le typage statique à JavaScript, ce qui réduit considérablement les bugs à l'exécution, améliore l'autocomplétion dans l'IDE et rend le code beaucoup plus maintenable et lisible pour une équipe.
+**Role** : Langage de programmation avec typage statique.
+**Pourquoi** : Reduction des bugs runtime, autocompletion IDE, maintenabilite du code.
 
 - **Documentation** : [https://www.typescriptlang.org/](https://www.typescriptlang.org/)
 - **Configuration** : [`tsconfig.json`](../../tsconfig.json)
+- **Mode** : `strict`, `noUnusedLocals`, `noUnusedParameters`
 
-## NPM (Node Package Manager)
+## NPM
 
-**Rôle** : Gestionnaire de dépendances.
-**Pourquoi** : Standard de facto de l'écosystème JavaScript pour installer et gérer les librairies tierces.
+**Role** : Gestionnaire de dependances.
 
 - **Documentation** : [https://docs.npmjs.com/](https://docs.npmjs.com/)
 - **Fichier** : [`package.json`](../../package.json)
 
-## ESLint (via TypeScript)
-
-**Rôle** : Linter (Analyse statique).
-**Pourquoi** : Identifie les problèmes de qualité de code et assure le respect des conventions avant même la compilation.
-
-- **Documentation** : [https://eslint.org/](https://eslint.org/)
-
 ## Playwright
 
-**Rôle** : Tests End-to-End (E2E).
-**Pourquoi** : Permet de tester l'application comme un utilisateur réel sur de multiples navigateurs (Chromium, Firefox, WebKit) et appareils mobiles. Il est plus fiable et rapide que les anciennes solutions comme Selenium ou Puppeteer.
+**Role** : Tests End-to-End (E2E).
+**Pourquoi** : Tests multi-navigateurs (Chromium, Firefox, WebKit) et mobile. Plus fiable et rapide que Selenium.
 
 - **Documentation** : [https://playwright.dev/](https://playwright.dev/)
 - **Configuration** : [`playwright.config.ts`](../../playwright.config.ts)
-- **Exécution** : `npm run test`
+- **Execution** : `npm test`
+- **Navigateurs** : Chromium, Firefox, WebKit, Mobile Chrome (Pixel 5), Mobile Safari (iPhone 12)

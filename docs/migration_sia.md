@@ -1,49 +1,54 @@
-# Migration Données SIA (ED-269)
+# Migration Donnees SIA (ED-269)
 
-**Date** : Février 2026
-**Source** : SIA (Service de l'Information Aéronautique)
+**Date** : Fevrier 2026
+**Source** : SIA (Service de l'Information Aeronautique)
 
-## 🎯 Objectif
+## Objectif
 
-Remplacer les flux IGN (WFS/WMTS) souvent incomplets ou instables par les données officielles du SIA au format JSON (proche du standard ED-269).
+Remplacer les flux IGN (WFS/WMTS) souvent incomplets ou instables par les donnees officielles du SIA au format JSON (proche du standard ED-269).
 
-## 🔄 Flux de Données
+## Flux de Donnees
 
-1.  **Source** : Fichier JSON téléchargé depuis le SIA (`public/data/UASZones_YYYY-MM-DD.json`).
-2.  **Conversion** : Script `convert_sia_to_geojson.js`.
-    - Nettoyage du BOM UTF-8.
-    - Extraction des géométries (`horizontalProjection`).
-    - **Conversion des Cercles** : Les zones définies par un cercle (Centre + Rayon) sont approximées en Polygones (64 points) pour être lisibles par Leaflet.
-3.  **Tuiles vectorielles** : Conversion GeoJSON → PMTiles via `tippecanoe` (WSL Ubuntu).
-    - `restrictions_sia.pmtiles` (z4–z12, ~18 MB)
-    - `allowed_zones.pmtiles` (z4–z10, ~0.9 MB)
-4.  **Chargement** : `LayerService.ts` charge les PMTiles via `leaflet-pmtiles-layer` (Leaflet.VectorGrid).
+1. **Source** : Fichier JSON telecharge depuis le SIA (`public/data/UASZones_YYYY-MM-DD.json`).
+2. **Conversion** : Script `convert_sia_to_geojson.js`.
+   - Nettoyage du BOM UTF-8.
+   - Extraction des geometries (`horizontalProjection`).
+   - **Conversion des Cercles** : Les zones definies par un cercle (Centre + Rayon) sont approximees en Polygones (64 points).
+3. **Tuiles vectorielles** : Conversion GeoJSON -> PMTiles via `tippecanoe` (WSL Ubuntu).
+   - `restrictions_sia.pmtiles` (z4-z12, ~18 MB, source-layer: `restrictions`)
+   - `allowed_zones.pmtiles` (z4-z10, ~0.9 MB, source-layer: `allowed`)
+4. **Chargement** : `LayerService.ts` utilise `map.addSource()` avec le protocole `pmtiles://` de MapLibre GL JS. Les styles conditionnels sont implementes via les expressions MapLibre.
 
-## 🎨 Logique de Visualisation
+## Logique de Visualisation
 
-Pour assurer une lisibilité maximale pour les télépilotes de loisir (Catégorie Ouverte), nous appliquons les règles suivantes dans `LayerService.ts` :
+Regles appliquees dans `LayerService.addRestrictionLayers()` via les expressions de style MapLibre :
 
-### 1. Code Couleur
+### Code Couleur
 
-| Couleur            | Catégorie                 | Condition Technique                                                |
-| :----------------- | :------------------------ | :----------------------------------------------------------------- |
-| 🔵 **Bleu**        | **Hors zone SIA**         | Couche de fond (pas de restriction SIA)                            |
-| 🔵 **Bleu acier**  | **Info / Non applicable** | `min_height >= 120m` (Peu importe le type de restriction)          |
-| ⛔ **Rouge**       | **Interdit**              | `restriction = "PROHIBITED"` ET `min_height < 120m`                |
-| 🟠 **Orange**      | **Autorisation requise**  | `restriction = "REQ_AUTHORISATION"` ET `min_height < 120m`         |
-| 🟡 **Ambre/Jaune** | **Restreint**             | `restriction` = `RESTRICTED`, `CONDITIONAL` ET `min_height < 120m` |
+| Couleur | Categorie | Condition |
+|---------|-----------|-----------|
+| Bleu (`#006FEE`) | Hors zone SIA | Couche de fond (pas de restriction SIA) |
+| Bleu acier (`#5b7fa5`) | Info / Non applicable | `min_height >= 120m` |
+| Rouge (`#c0392b`) | Interdit | `restriction = "PROHIBITED"` et `min_height < 120m` |
+| Orange (`#e67e22`) | Autorisation requise | `restriction = "REQ_AUTHORISATION"` et `min_height < 120m` |
+| Ambre (`#f39c12`) | Restreint | `restriction = RESTRICTED/CONDITIONAL` et `min_height < 120m` |
 
-### 2. Justification du "Bleu acier" (> 120m)
+### Gradients de hauteur (RESTRICTED/CONDITIONAL + AGL)
 
-Certaines zones sont marquées "PROHIBITED" ou "RESTRICTED" par le SIA mais commencent à une altitude élevée (ex: FL 115, soit ~3500m).
-La limite de 120m AGL pour les drones existe pour assurer la **ségrégation** avec les aéronefs habités (contrôlés ou non), et ainsi éviter tout risque d'intrusion dans les espaces de vol sans contact préalable.
-Pour un drone de loisir limité légalement à **120m de hauteur**, ces zones ne sont **pas contraignantes**.
-Elles sont donc affichées en **bleu acier** (couleur neutre, non alarmante) pour informer le pilote qu'il peut voler _en dessous_ de la zone active.
+| max_height | Couleur | Opacite |
+|-----------|---------|---------|
+| <= 30m | `#d35400` (orange fonce) | 0.4 |
+| <= 50m | `#e67e22` (orange) | 0.3 |
+| <= 60m | `#f39c12` (ambre) | 0.25 |
+| > 60m | `#f1c40f` (jaune) | 0.15 |
 
-> **Note UX** : Le vert a été retiré pour les zones de restriction suite à des retours d'expert UX — le vert étant perçu comme "tout va bien" alors qu'il s'agit toujours de zones réglementées.
+### Justification du "Bleu acier" (> 120m)
 
-## ⚠️ Points d'Attention
+Certaines zones sont marquees "PROHIBITED" ou "RESTRICTED" par le SIA mais commencent a une altitude elevee (ex: FL 115, soit ~3500m). Pour un drone de loisir limite legalement a **120m de hauteur**, ces zones ne sont **pas contraignantes**. Elles sont affichees en bleu acier (couleur neutre) pour informer le pilote qu'il peut voler en dessous de la zone active.
 
-- **Zones urbaines** : Les zones urbaines (agglomérations) nécessitant une autorisation préfectorale ne sont PAS cartographiées dans les données SIA. Un avertissement est affiché dans le popup des zones bleues et dans la légende.
-- **Mise à jour** : Lors de la publication d'un nouveau fichier SIA, il faut relancer `node convert_sia_to_geojson.js`.
-- **Hauteurs** : L'application privilégie les hauteurs AGL (Above Ground Level). Les hauteurs AMSL (Above Mean Sea Level) sont affichées à titre indicatif dans les popups.
+## Points d'Attention
+
+- **Zones urbaines** : Les agglomerations necessitant une autorisation prefectorale ne sont PAS cartographiees dans les donnees SIA. Un avertissement est affiche dans les popups et la legende.
+- **Mise a jour** : Lors de la publication d'un nouveau fichier SIA, relancer `node convert_sia_to_geojson.js` puis `tippecanoe`.
+- **Hauteurs** : L'application privilegiee les hauteurs AGL (Above Ground Level). Les hauteurs AMSL sont affichees a titre indicatif dans les popups.
+- **Expressions MapLibre** : la logique de couleur utilise `case`, `coalesce`, `get`, `all`, `any` dans les proprietes `paint` des layers `fill` et `line`.

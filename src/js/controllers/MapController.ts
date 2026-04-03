@@ -1,45 +1,9 @@
-import '../leaflet-setup';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import 'leaflet-minimap';
-import 'leaflet-minimap/dist/Control.MiniMap.min.css';
-// import 'leaflet.locatecontrol'; 
-import * as LocateControlModule from 'leaflet.locatecontrol';
-import 'leaflet.locatecontrol/dist/L.Control.Locate.min.css';
-import 'leaflet-control-geocoder';
-import 'leaflet-control-geocoder/dist/Control.Geocoder.css';
-import 'leaflet-velocity';
-import 'leaflet-velocity/dist/leaflet-velocity.css';
-
-// Manual registration attempt 3
-// @ts-ignore
-if (LocateControlModule) {
-
-     
-     // Check for various UMD export patterns
-     // @ts-ignore
-     const LocateClass = LocateControlModule.LocateControl || LocateControlModule.default || LocateControlModule;
-     
-     if (typeof LocateClass === 'function' && !(L.Control as any).Locate) {
-        // @ts-ignore
-        L.Control.Locate = LocateClass;
-        // @ts-ignore
-        L.control.locate = function (options) {
-            // @ts-ignore
-            return new LocateClass(options);
-        };
-
-     }
-}
-
+import maplibregl from 'maplibre-gl';
 import MapService from '../services/MapService';
 import LayerService from '../services/LayerService';
 import Config from '../config/config';
 import WeatherService from '../services/WeatherService';
-// import RestrictionInfoService from '../services/RestrictionInfoService';
 import BasemapSwitcher from '../controls/BasemapSwitcher';
-
-declare const lucide: any;
 
 declare global {
     interface Window {
@@ -53,274 +17,416 @@ export default class MapController {
     private layerService: LayerService;
     private weatherService: WeatherService;
     private isInitialized: boolean;
-    private basemapSwitcher: BasemapSwitcher | null;
-    private layerControl: L.Control.Layers | null;
-    private miniMap: any;
-    private currentMiniMapLayer: L.Layer | null;
-    // private _restrictionInfoService: RestrictionInfoService; // Unused with PMTiles (click handled by VectorGrid)
-    private _droneLayer: L.GeoJSON | null = null;
+    private miniMap: maplibregl.Map | null;
 
     constructor() {
         this.mapService = new MapService();
         this.layerService = new LayerService();
         this.weatherService = new WeatherService();
         this.isInitialized = false;
-        this.basemapSwitcher = null;
-        this.layerControl = null;
         this.miniMap = null;
-        this.currentMiniMapLayer = null;
-        // this._restrictionInfoService = new RestrictionInfoService();
     }
 
     initialize(): void {
-        if (this.isInitialized) {
-            console.warn('MapController already initialized');
-            return;
-        }
+        if (this.isInitialized) return;
 
-        this.mapService.initializeMap('map');
-        this._setupEventListeners();
-        this._loadInitialLayers();
-        this._setupUI();
-        this._setupTileErrorHandling();
-        this._initializeLucideIcons();
-        this._setupAnalyticsTracking();
+        const map = this.mapService.initializeMap('map');
 
+        map.on('load', () => {
+            this._setupLayers();
+            this._setupClickHandlers();
+            this._setupUI();
+            this._setupAnalyticsTracking();
+        });
+
+        this._setupResponsiveEvents();
         this.isInitialized = true;
     }
 
-    private _setupAnalyticsTracking(): void {
-        const map = this.mapService.getMap();
-        const analytics = window.analyticsService;
+    // ── Layers ──
 
-        if (!analytics || !map) return;
-
-        // Track les zoom
-        map.on('zoomend', () => {
-            const zoom = map.getZoom();
-            const center = map.getCenter();
-            analytics.trackMapInteraction('zoom', {
-                zoom: zoom,
-                center: center
-            });
-        });
-
-        // Track les changements de fond de carte
-        map.on('baselayerchange', (e: any) => {
-            analytics.trackBaseMapChange(e.name);
-        });
-
-        // Track l'activation/désactivation des overlays
-        map.on('overlayadd', (e: any) => {
-            analytics.trackLayerToggle(e.name, true);
-        });
-
-        map.on('overlayremove', (e: any) => {
-            analytics.trackLayerToggle(e.name, false);
-        });
-    }
-
-    private _setupEventListeners(): void {
-        this._setupResponsiveEvents();
-        this._setupLayerControl();
-        this._setupRestrictionClickHandler();
-    }
-
-    private _setupLayerControl(): void {
+    private _setupLayers(): void {
         const map = this.mapService.getMap();
         if (!map) return;
 
-        // Custom Panes for Strict Ordering
-        // Create only if they don't exist to avoid errors on potential re-runs
-        if (!map.getPane('allowedPane')) {
-            map.createPane('allowedPane');
-            map.getPane('allowedPane')!.style.zIndex = '400';
-        }
-        
-        if (!map.getPane('restrictionPane')) {
-            map.createPane('restrictionPane');
-            map.getPane('restrictionPane')!.style.zIndex = '450';
-        }
-
-        // Créer le sélecteur visuel de fond de carte (topright)
-        const baseMapsConfig = Config.LAYERS_CONFIG.baseMaps;
-        const baseMaps: Record<string, L.TileLayer> = {};
-
-        const serviceBaseLayers = (this.mapService as any)['baseLayers'];
-        Object.entries(baseMapsConfig).forEach(([key]) => {
-             if (serviceBaseLayers[key]) {
-                 baseMaps[key] = serviceBaseLayers[key];
-             }
-        });
-
-        this.basemapSwitcher = new BasemapSwitcher(this.mapService, baseMaps);
-        this.basemapSwitcher.createControl().addTo(map);
-
-        // Créer un contrôle séparé pour les overlays (topright, en dessous du basemap switcher)
-        const overlayMaps: Record<string, L.Layer> = {};
-        
-        this.layerControl = L.control.layers(undefined, overlayMaps, {
-            position: 'topright',
-            collapsed: true
-        }).addTo(map);
-
-        // Pass map reference to LayerService for popup opening (PMTiles/VectorGrid)
         this.layerService.setMap(map);
-
-        // Async load drone layer
-        this.loadDroneLayer(); 
-
-        // Configuration du comportement hover pour desktop
-        setTimeout(() => {
-            this._setupLayerControlHover();
-        }, 200);
+        this.layerService.addRestrictionLayers();
+        this.layerService.addAllowedZonesLayers();
     }
 
-    private async loadDroneLayer(): Promise<void> {
+    // ── Click handlers ──
+
+    private _setupClickHandlers(): void {
         const map = this.mapService.getMap();
         if (!map) return;
 
-        try {
-            // Load allowed zones FIRST (pane: allowedPane)
-            // We pass the pane via options, requires LayerService update to accept options or we set it here if LayerService returns a GeoJSON layer that we can mutate.
-            // LayerService.loadAllowedZonesLayer returns Promise<L.GeoJSON>.
-            // We can set the pane using options in the L.geoJSON call inside LayerService, OR here.
-            // BUT L.geoJSON options are set at creation. Resetting pane after creation iterates layers.
-            // Best to pass pane name to LayerService methods.
-            
-            // Let's assume we modify LayerService to accept an options object or string.
-            // Or simpler: iterate and set pane.
-            
-            const allowedLayer = await this.layerService.loadAllowedZonesPMTiles('allowedPane');
-            if (allowedLayer) {
-                allowedLayer.addTo(map);
-                this.layerControl?.addOverlay(allowedLayer, "Zones Autorisées");
-            }
-
-            // Load restrictions on top (pane: restrictionPane) — PMTiles vector tiles
-            this._droneLayer = await this.layerService.loadDroneRestrictionsPMTiles('restrictionPane') as any;
-            if (this._droneLayer) {
-                this.layerControl?.addOverlay(this._droneLayer, "Restrictions");
-                this._droneLayer.addTo(map);
-                this._droneLayer.bringToFront(); // Ensure it's top within its pane
-            }
-        } catch (error) {
-            console.error("Failed to load drone layers:", error);
-        }
-    }
-
-    private _setupLayerControlHover(): void {
-        if (!this.layerControl) return;
-        
-        const controlContainer = this.layerControl.getContainer();
-        if (!controlContainer) return;
-
-        if (!this._isMobileDevice()) {
-            controlContainer.addEventListener('mouseenter', () => {
-                try {
-                    // Check if class list implies collapsed state, but leaflet API is safer
-                    if (!controlContainer.classList.contains('leaflet-control-layers-expanded') && this.layerControl) {
-                        this.layerControl.expand();
-                    }
-                } catch (error) {
-                    console.debug('Layer control hover expand error:', error);
-                }
-            });
-
-            controlContainer.addEventListener('mouseleave', () => {
-                setTimeout(() => {
-                    try {
-                        if (!controlContainer.matches(':hover') && this.layerControl) {
-                            this.layerControl.collapse();
-                        }
-                    } catch (error) {
-                        console.debug('Layer control hover collapse error:', error);
-                    }
-                }, 100);
-            });
-        }
-    }
-
-    private _isMobileDevice(): boolean {
-        return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    }
-
-    private _setupResponsiveEvents(): void {
-        window.addEventListener('resize', () => {
-            this._handleResize();
+        map.on('mouseenter', 'restrictions-fill', () => {
+            map.getCanvas().style.cursor = 'pointer';
         });
-    }
+        map.on('mouseleave', 'restrictions-fill', () => {
+            map.getCanvas().style.cursor = '';
+        });
 
-    /**
-     * Setup click handler for restriction zone info popups.
-     */
-    private _setupRestrictionClickHandler(): void {
-        const map = this.mapService.getMap();
-        if (!map) return;
+        // Restriction click
+        map.on('click', 'restrictions-fill', (e) => {
+            if (!e.features || e.features.length === 0) return;
+            const props = e.features[0].properties;
+            if (!props) return;
 
-        map.on('click', (e: L.LeafletMouseEvent) => {
-            const zoom = map.getZoom();
+            new maplibregl.Popup({ className: 'restriction-popup-container', maxWidth: '340px' })
+                .setLngLat(e.lngLat)
+                .setHTML(this.layerService.buildRestrictionPopupHTML(props))
+                .addTo(map);
+        });
 
-            // Uniquement si on a un niveau de zoom décent pour éviter les clics accidentels
-            if (zoom < 8) return;
+        // Fallback — "Vol Autorisé"
+        map.on('click', (e) => {
+            if (map.getZoom() < 5) return;
 
-            // Ce handler "fallback" ne s'exécute que si le clic n'a pas été intercepté 
-            // par une couche de restriction interactive (qui appelle stopPropagation).
-            
-            const popupContent = `
+            const features = map.queryRenderedFeatures(e.point, { layers: ['restrictions-fill'] });
+            if (features.length > 0) return;
+
+            const html = `
                 <div class="restriction-popup">
-                    <div class="restriction-header" style="background: #2ecc71; color: white; padding: 10px; border-radius: 4px 4px 0 0; font-weight: bold; display: flex; align-items: center;">
-                        <span class="material-symbols-outlined" style="margin-right: 6px;">check_circle</span>
-                        Vol Autorisé
+                    <div class="popup-header" style="background: #006FEE;">
+                        <div class="popup-icon">
+                            <span class="material-symbols-outlined">check_circle</span>
+                        </div>
+                        <span>Vol Autorisé</span>
                     </div>
-                    <div class="restriction-body" style="padding: 12px; background: white; border-radius: 0 0 4px 4px;">
-                        <div style="margin-bottom: 10px; display: flex; align-items: center;">
-                            <span class="material-symbols-outlined" style="font-size: 20px; margin-right: 8px; color: #27ae60;">vertical_align_top</span>
-                            <strong>Hauteur max :</strong> 120m
+                    <div class="popup-body">
+                        <div class="popup-row">
+                            <span class="popup-label">Hauteur max</span>
+                            <span class="popup-value">120m AGL</span>
                         </div>
-                        <div style="font-size: 0.95em; color: #444; margin-bottom: 12px;">
-                            Pas de restriction spécifique détectée. Catégorie Ouverte (A1/A2/A3).
-                        </div>
-                        <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 10px; font-size: 0.85em; display: flex; align-items: flex-start; gap: 8px; color: #856404;">
-                            <span class="material-symbols-outlined" style="font-size: 18px; flex-shrink: 0;">warning</span>
-                            <span>Respectez les règles : pas de survol de l'espace public en agglomération, ni de personnes, ni de sites sensibles.</span>
-                        </div>
-                        <div style="font-size: 0.8em; color: #999; margin-top: 12px; display: flex; align-items: center;">
-                            <span class="material-symbols-outlined" style="font-size: 14px; margin-right: 4px;">gavel</span>
-                            Réglementation Européenne
+                        <div class="popup-row">
+                            <span class="popup-label">Catégorie</span>
+                            <span class="popup-value">Ouverte (A1/A2/A3)</span>
                         </div>
                     </div>
-                    <a href="https://www.ecologie.gouv.fr/politiques-publiques/guides-exploitants-daeronefs" 
-                       target="_blank" 
-                       rel="noopener" 
-                       class="restriction-link"
-                       style="display: block; text-align: center; padding: 10px; background: #f8f9fa; border-top: 1px solid #eee; text-decoration: none; color: #2185d0; font-weight: 500; font-size: 0.9em; border-radius: 0 0 4px 4px;">
-                        📖 Guides exploitants DGAC →
+                    <div class="popup-warning">
+                        <span class="material-symbols-outlined">warning</span>
+                        <span>Respectez les règles : pas de survol de personnes, agglomérations ou sites sensibles.</span>
+                    </div>
+                    <div class="popup-footer">
+                        <span class="material-symbols-outlined">gavel</span>
+                        Réglementation Européenne
+                    </div>
+                    <a href="https://www.ecologie.gouv.fr/politiques-publiques/guides-exploitants-daeronefs"
+                       target="_blank" rel="noopener" class="popup-link">
+                        <span class="material-symbols-outlined">menu_book</span>
+                        Guides exploitants DGAC
                     </a>
                 </div>
             `;
 
-            L.popup({ className: 'restriction-popup-container' })
-                .setLatLng(e.latlng)
-                .setContent(popupContent)
-                .openOn(map);
+            new maplibregl.Popup({ className: 'restriction-popup-container', maxWidth: '340px' })
+                .setLngLat(e.lngLat)
+                .setHTML(html)
+                .addTo(map);
         });
     }
 
-    private _setupUI(): void {
-        this._addMapControls();
-    }
+    // ── UI Controls ──
 
-    private _addMapControls(): void {
+    private _setupUI(): void {
+        // Top-left
         this._addTitleControl();
-        this._addZoomControl();
+        this._addNavigationControl();
+        this._addLocateControl();
+        this._addSearchControl();
+
+        // Top-right (order = top to bottom)
+        this._addBasemapSwitcher();
+        this._addLayerControl();
+        this._addDomTomGeocoder();
+        this._addWeatherWidget();
+
+        // Bottom
         this._addScaleControl();
         this._addLegendControl();
         this._addMiniMapControl();
-        this._addLocateControl();
-        this._addDomTomGeocoder();
-        this._addSearchControl();
-        this._addWeatherWidget();
+    }
+
+    private _addBasemapSwitcher(): void {
+        const map = this.mapService.getMap();
+        if (!map) return;
+        map.addControl(
+            new BasemapSwitcher(this.mapService, (key) => this.syncMiniMapBasemap(key)),
+            'top-right'
+        );
+    }
+
+    private _addLayerControl(): void {
+        const map = this.mapService.getMap();
+        if (!map) return;
+
+        const control: maplibregl.IControl = {
+            onAdd: () => {
+                const c = document.createElement('div');
+                c.className = 'maplibregl-ctrl layer-control';
+                c.innerHTML = `
+                    <div class="layer-control-icon">
+                        <span class="material-symbols-outlined">layers</span>
+                    </div>
+                    <div class="layer-control-panel">
+                        <div class="layer-control-title">Couches</div>
+                        <label>
+                            <input type="checkbox" id="toggle-restrictions" checked />
+                            <span class="layer-dot" style="background: #c0392b;"></span>
+                            Restrictions
+                        </label>
+                        <label>
+                            <input type="checkbox" id="toggle-allowed" checked />
+                            <span class="layer-dot" style="background: #006FEE;"></span>
+                            Zones Autorisées
+                        </label>
+                    </div>
+                `;
+                c.addEventListener('click', (e) => e.stopPropagation());
+
+                setTimeout(() => {
+                    const tr = c.querySelector('#toggle-restrictions') as HTMLInputElement;
+                    const ta = c.querySelector('#toggle-allowed') as HTMLInputElement;
+                    tr?.addEventListener('change', () => {
+                        this.layerService.setLayerVisibility(['restrictions-fill', 'restrictions-outline'], tr.checked);
+                    });
+                    ta?.addEventListener('change', () => {
+                        this.layerService.setLayerVisibility(['allowed-fill', 'allowed-outline'], ta.checked);
+                    });
+                }, 0);
+
+                return c;
+            },
+            onRemove: () => {}
+        };
+        map.addControl(control, 'top-right');
+    }
+
+    private _addTitleControl(): void {
+        const map = this.mapService.getMap();
+        if (!map) return;
+
+        const control: maplibregl.IControl = {
+            onAdd: () => {
+                const div = document.createElement('div');
+                div.className = 'maplibregl-ctrl map-title-control';
+                div.innerHTML = `
+                    <span class="material-symbols-outlined">flight_takeoff</span>
+                    Zones de vol Drone
+                `;
+                return div;
+            },
+            onRemove: () => {}
+        };
+        map.addControl(control, 'top-left');
+    }
+
+    private _addNavigationControl(): void {
+        const map = this.mapService.getMap();
+        if (!map) return;
+        map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-left');
+    }
+
+    private _addScaleControl(): void {
+        const map = this.mapService.getMap();
+        if (!map) return;
+        map.addControl(new maplibregl.ScaleControl({ maxWidth: 100, unit: 'metric' }), 'bottom-left');
+    }
+
+    private _addLegendControl(): void {
+        const map = this.mapService.getMap();
+        if (!map) return;
+
+        const control: maplibregl.IControl = {
+            onAdd: () => {
+                const div = document.createElement('div');
+                div.className = 'maplibregl-ctrl legend-control';
+                div.innerHTML = `
+                    <button class="legend-toggle" onclick="window.toggleLegend()">
+                        <span class="material-symbols-outlined">info</span>
+                    </button>
+                    <div class="legend-header">Légende SIA</div>
+                    <div class="legend-content">
+                        <div class="legend-item highlight">
+                            <span class="legend-dot" style="background: #006FEE;"></span>
+                            <span>Hors zone SIA</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background: #c0392b;"></span>
+                            <span>Interdit</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background: #e67e22;"></span>
+                            <span>Autorisation requise</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background: #f39c12;"></span>
+                            <span>Restreint / Conditionnel</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot" style="background: #5b7fa5;"></span>
+                            <span>Info (&gt; 120m)</span>
+                        </div>
+                    </div>
+                    <div class="legend-warning">
+                        <span class="material-symbols-outlined">warning</span>
+                        <span>Zones urbaines non cartographiées. Vérifiez les règles locales.</span>
+                    </div>
+                `;
+                return div;
+            },
+            onRemove: () => {}
+        };
+        map.addControl(control, 'bottom-left');
+
+        window.toggleLegend = () => {
+            const ctrl = document.querySelector('.legend-control');
+            if (ctrl) ctrl.classList.toggle('expanded');
+        };
+    }
+
+    private _addMiniMapControl(): void {
+        const map = this.mapService.getMap();
+        if (!map) return;
+
+        const jawgToken = import.meta.env.VITE_JAWG_MAPS_API;
+        const baseMaps = Config.LAYERS_CONFIG.baseMaps;
+
+        const control: maplibregl.IControl = {
+            onAdd: () => {
+                const container = document.createElement('div');
+                container.className = 'maplibregl-ctrl minimap-container';
+                container.style.cssText = 'width: 150px; height: 150px;';
+
+                setTimeout(() => {
+                    this.miniMap = new maplibregl.Map({
+                        container,
+                        style: {
+                            version: 8,
+                            sources: {
+                                'jawg-mini': {
+                                    type: 'raster',
+                                    tiles: [`https://tile.jawg.io/jawg-streets/{z}/{x}/{y}.png?access-token=${jawgToken}`],
+                                    tileSize: 256, maxzoom: 22
+                                },
+                                'satellite-mini': {
+                                    type: 'raster',
+                                    tiles: baseMaps.satellite.tiles,
+                                    tileSize: 256, maxzoom: baseMaps.satellite.maxzoom
+                                }
+                            },
+                            layers: [
+                                { id: 'jawg-mini-layer', type: 'raster', source: 'jawg-mini', layout: { visibility: 'visible' } },
+                                { id: 'satellite-mini-layer', type: 'raster', source: 'satellite-mini', layout: { visibility: 'none' } }
+                            ]
+                        },
+                        center: map.getCenter(),
+                        zoom: Math.max(map.getZoom() - 5, 0),
+                        interactive: false,
+                        attributionControl: false
+                    });
+
+                    map.on('moveend', () => {
+                        this.miniMap?.jumpTo({
+                            center: map.getCenter(),
+                            zoom: Math.max(map.getZoom() - 5, 0)
+                        });
+                    });
+                }, 100);
+
+                return container;
+            },
+            onRemove: () => {}
+        };
+        map.addControl(control, 'bottom-right');
+    }
+
+    syncMiniMapBasemap(basemapKey: string): void {
+        if (!this.miniMap) return;
+        const isJawg = basemapKey !== 'satellite';
+        this.miniMap.setLayoutProperty('jawg-mini-layer', 'visibility', isJawg ? 'visible' : 'none');
+        this.miniMap.setLayoutProperty('satellite-mini-layer', 'visibility', isJawg ? 'none' : 'visible');
+    }
+
+    private _addLocateControl(): void {
+        const map = this.mapService.getMap();
+        if (!map) return;
+
+        const geolocate = new maplibregl.GeolocateControl({
+            positionOptions: { enableHighAccuracy: true, maximumAge: 30000, timeout: 15000 },
+            trackUserLocation: false
+        });
+        map.addControl(geolocate, 'top-left');
+
+        const analytics = window.analyticsService;
+        if (analytics) {
+            geolocate.on('geolocate', () => analytics.trackGeolocation(true));
+            geolocate.on('error', () => analytics.trackGeolocation(false));
+        }
+    }
+
+    private _addSearchControl(): void {
+        const map = this.mapService.getMap();
+        if (!map) return;
+
+        const control: maplibregl.IControl = {
+            onAdd: () => {
+                const container = document.createElement('div');
+                container.className = 'maplibregl-ctrl geocoder-control';
+                container.innerHTML = `
+                    <div class="geocoder-wrapper">
+                        <div class="geocoder-icon">
+                            <span class="material-symbols-outlined">search</span>
+                        </div>
+                        <input type="text" id="geocoder-input" placeholder="Rechercher une adresse..." />
+                    </div>
+                    <div class="geocoder-results" id="geocoder-results"></div>
+                `;
+                container.addEventListener('click', (e) => e.stopPropagation());
+
+                setTimeout(() => {
+                    const input = container.querySelector('#geocoder-input') as HTMLInputElement;
+                    const results = container.querySelector('#geocoder-results') as HTMLElement;
+                    if (!input || !results) return;
+
+                    let timer: any;
+                    input.addEventListener('input', () => {
+                        clearTimeout(timer);
+                        timer = setTimeout(async () => {
+                            const q = input.value.trim();
+                            if (q.length < 3) { results.style.display = 'none'; return; }
+                            try {
+                                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&countrycodes=fr,gp,mq,gf,re,yt`);
+                                const data = await res.json();
+                                if (data.length > 0) {
+                                    results.innerHTML = data.map((r: any) =>
+                                        `<div class="geocoder-result" data-bbox="${r.boundingbox}">${r.display_name}</div>`
+                                    ).join('');
+                                    results.style.display = 'block';
+                                    results.querySelectorAll('.geocoder-result').forEach((el) => {
+                                        el.addEventListener('click', () => {
+                                            const bbox = el.getAttribute('data-bbox')!.split(',').map(Number);
+                                            map.fitBounds([[bbox[2], bbox[0]], [bbox[3], bbox[1]]], { padding: 50 });
+                                            results.style.display = 'none';
+                                            input.value = el.textContent?.trim() || '';
+                                        });
+                                    });
+                                } else { results.style.display = 'none'; }
+                            } catch { results.style.display = 'none'; }
+                        }, 400);
+                    });
+
+                    document.addEventListener('click', (e) => {
+                        if (!container.contains(e.target as Node)) results.style.display = 'none';
+                    });
+                }, 0);
+
+                return container;
+            },
+            onRemove: () => {}
+        };
+        map.addControl(control, 'top-left');
     }
 
     private _addWeatherWidget(): void {
@@ -328,42 +434,35 @@ export default class MapController {
         if (!map) return;
 
         const startCenter = map.getCenter();
-        
-        // Custom Control
-        const weatherControl = new L.Control({ position: 'topright' });
 
-        weatherControl.onAdd = () => {
-            const container = L.DomUtil.create('div', 'weather-widget');
-            container.innerHTML = `
-                <div class="weather-icon-container">
-                    <i data-lucide="wind" class="weather-icon"></i>
-                </div>
-                <div class="weather-info">
-                    <span class="weather-label">Vent</span>
-                    <div class="weather-value">
-                        <span id="wind-speed">--</span> <span>km/h</span>
+        const control: maplibregl.IControl = {
+            onAdd: () => {
+                const c = document.createElement('div');
+                c.className = 'maplibregl-ctrl weather-widget';
+                c.innerHTML = `
+                    <div class="weather-icon-container">
+                        <span class="material-symbols-outlined">air</span>
                     </div>
-                </div>
-                <div class="wind-direction" id="wind-direction-arrow">
-                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="wind-arrow-icon">
-                        <polygon points="12 2 19 21 12 17 5 21 12 2"></polygon>
-                    </svg>
-                </div>
-            `;
-            
-            // Prevent map interaction when clicking the widget
-            L.DomEvent.disableClickPropagation(container);
-            return container;
+                    <div class="weather-info">
+                        <span class="weather-label">Vent</span>
+                        <div class="weather-value">
+                            <span id="wind-speed">--</span>
+                            <span>km/h</span>
+                        </div>
+                    </div>
+                    <div class="wind-direction" id="wind-direction-arrow">
+                        <span class="material-symbols-outlined" style="font-size: 22px;">navigation</span>
+                    </div>
+                `;
+                c.addEventListener('click', (e) => e.stopPropagation());
+                return c;
+            },
+            onRemove: () => {}
         };
+        map.addControl(control, 'top-right');
 
-        weatherControl.addTo(map);
-
-        // Initial Fetch
         this._updateWeather(startCenter.lat, startCenter.lng);
-        // Initialize Layer ONCE for fluidity
-        this._initWindLayer(startCenter.lat, startCenter.lng);
 
-        // Update on move (debounced) - Widget ONLY
         let timeout: any;
         map.on('moveend', () => {
             clearTimeout(timeout);
@@ -377,548 +476,116 @@ export default class MapController {
     private async _updateWeather(lat: number, lng: number): Promise<void> {
         try {
             const data = await this.weatherService.getCurrentWind(lat, lng);
-            
             const widget = document.querySelector('.weather-widget');
             const speedEl = document.getElementById('wind-speed');
             const arrowEl = document.getElementById('wind-direction-arrow');
 
             if (widget && speedEl && arrowEl) {
-                // Update Value
                 speedEl.textContent = Math.round(data.windSpeed).toString();
-
-                // Update Direction Rotation
-                // OpenMeteo gives direction in degrees (0 = North, 90 = East)
-                // The icon (navigation) usually points Up (North).
-                // We rotate it by direction + 180 to point IN THE DIRECTION OF FLOW (Destination),
-                // matching the particle layer movement, instead of pointing into the wind (Source).
                 arrowEl.style.transform = `rotate(${data.windDirection + 180}deg)`;
 
-                // Update Safety Status
                 widget.classList.remove('safe', 'warning', 'danger');
-                if (data.isSafe) {
-                    widget.classList.add('safe');
-                } else if (data.windGusts > 50) {
-                     widget.classList.add('danger');
-                } else {
-                     widget.classList.add('warning');
-                }
-                
-                // Refresh icons in case of dynamic update
-                // Refresh icons in case of dynamic update
-                if (typeof lucide !== 'undefined') {
-                    lucide.createIcons();
-                }
-
-                // Note: We do NOT update the wind layer here to maintain fluidity.
-                const map = this.mapService.getMap();
-                if (map && this._lastWindGridCenter) {
-                     const currentCenter = L.latLng(lat, lng);
-                     const dist = map.distance(this._lastWindGridCenter, currentCenter);
-                     if (dist > 500000) { // 500km threshold
-                         this._initWindLayer(lat, lng);
-                     }
-                }
+                if (data.isSafe) widget.classList.add('safe');
+                else if (data.windGusts > 50) widget.classList.add('danger');
+                else widget.classList.add('warning');
             }
         } catch (error) {
             console.warn('Weather update failed', error);
         }
     }
 
-    private _windLayer: any = null;
-    private _lastWindGridCenter: L.LatLng | null = null;
-
-    /**
-     * Initializes the visual wind layer with a static "Regional" field.
-     * We do NOT update this on move/zoom to ensure 60fps fluidity (Canvas panning).
-     * We creates a massive grid (France-wide) based on the initial fetch.
-     */
-    private async _initWindLayer(lat: number, lng: number): Promise<void> {
-        const map = this.mapService.getMap();
-        if (!map) return;
-        
-        this._lastWindGridCenter = L.latLng(lat, lng);
-        
-        // Use existing state to check visibility before removal
-        const isLayerActive = this._windLayer && map.hasLayer(this._windLayer);
-
-        // CLEANUP: Remove strict reference to existing layer from map AND control
-        if (this._windLayer) {
-            map.removeLayer(this._windLayer);
-            if (this.layerControl) {
-                this.layerControl.removeLayer(this._windLayer);
-            }
-            this._windLayer = null;
-        }
-
-        try {
-            // Get initial condition for the field generation
-            const data = await this.weatherService.getCurrentWind(lat, lng);
-            
-            // Generate a huge field (covering +/- 10 degrees) to allow panning without regeneration
-            // This is a "Visual Approximation" for the 'Wow' effect.
-            const windField = this.weatherService.generateWindField(lat, lng, data.windSpeed, data.windDirection);
-
-            // @ts-ignore
-            this._windLayer = L.velocityLayer({
-                displayValues: false,
-                displayOptions: {
-                    velocityType: 'Vent Global',
-                    position: 'bottomleft',
-                    emptyString: 'Pas de données de vent',
-                    angleConvention: 'bearingCW',
-                    displayPosition: 'bottomleft',
-                    displayEmptyString: 'No wind data',
-                    speedUnit: 'km/h'
-                },
-                data: windField,
-                maxVelocity: 40,
-                velocityScale: 0.01 // Fine tune for visuals
-            });
-
-            if (this.layerControl) {
-                this.layerControl.addOverlay(this._windLayer, "Météo");
-            }
-
-            // Persistence: If it was active, add the new one back to the map
-            // If it's the very first init (isLayerActive false), we don't auto-add it (user must toggle)
-            // UNLESS the user wants it by default? In step 1475/1449 user implied "je dois l'activer".
-            // So default is off. But if I switch territory, I want it to STAY on if it was on.
-            if (isLayerActive) {
-                this._windLayer.addTo(map);
-            }
-
-        } catch (e) {
-            console.warn('Failed to init wind visuals', e);
-        }
-    }
-
-    private _addSearchControl(): void {
-        const map = this.mapService.getMap();
-        if (!map) return;
-
-        // @ts-ignore
-        L.Control.geocoder({
-            defaultMarkGeocode: false,
-            position: 'topleft',
-            placeholder: 'Rechercher une adresse...'
-        })
-        .on('markgeocode', function(e: any) {
-            const bbox = e.geocode.bbox;
-            const poly = L.polygon([
-                bbox.getSouthEast(),
-                bbox.getNorthEast(),
-                bbox.getNorthWest(),
-                bbox.getSouthWest()
-            ]);
-            map.fitBounds(poly.getBounds());
-        })
-        .addTo(map);
-    }
-
-    private _addZoomControl(): void {
-        const map = this.mapService.getMap();
-        if (map) {
-            L.control.zoom({
-                position: 'topleft'
-            }).addTo(map);
-        }
-    }
-
-    private _addTitleControl(): void {
-        const map = this.mapService.getMap();
-        if (!map) return;
-
-        const titleControl = new L.Control({position: 'topleft'});
-
-        titleControl.onAdd = function (_map) {
-            const div = L.DomUtil.create('div', 'map-title-control');
-            div.innerHTML = `
-                <i data-lucide="map-pin" style="width: 18px; height: 18px; margin-right: 8px; vertical-align: middle;"></i>
-                Zones de vol Drone
-            `;
-            return div;
-        };
-
-        titleControl.addTo(map);
-    }
-
-    // _getColorCode unused with PMTiles — kept for reference
-    /*
-    private _getColorCode(colorKey: string): string {
-        const colors: Record<string, string> = {
-            'RED': '#db2828',
-            'ORANGE': '#f2711c',
-            'YELLOW': '#fbbd08',
-            'YELLOW_ORANGE': '#fce205',
-            'BLUE': '#3498db',
-            'GREEN': '#21ba45',
-            'UNKNOWN': '#767676'
-        };
-        return colors[colorKey] || colors['UNKNOWN'];
-    }
-    */
-
-    private _addScaleControl(): void {
-        const map = this.mapService.getMap();
-        if (map) {
-            L.control.scale({
-                position: 'bottomleft',
-                metric: true,
-                imperial: false
-            }).addTo(map);
-        }
-    }
-
-    private _addLegendControl(): void {
-        const map = this.mapService.getMap();
-        if (!map) return;
-
-        const legend = new L.Control({position: 'bottomleft'});
-
-        legend.onAdd = function (_map) {
-            const div = L.DomUtil.create('div', 'info legend');
-
-            div.innerHTML = `
-                <button class="legend-toggle" onclick="window.toggleLegend()">
-                    <span class="material-symbols-outlined" style="font-size: 20px;">info</span>
-                </button>
-                <div class="legend-content">
-                    <h4>Légende (SIA)</h4>
-                    <div style="display: flex; align-items: center; margin-bottom: 6px; padding: 6px; background: rgba(52,152,219,0.1); border-radius: 4px;">
-                        <span class="material-symbols-outlined" style="color:#3498db; margin-right: 6px;">explore</span>
-                        <span><strong>Hors zone SIA</strong></span>
-                    </div>
-                    
-                    <div style="display: flex; align-items: center; margin: 4px 0;">
-                        <span class="material-symbols-outlined" style="color:#c0392b; margin-right: 6px;">block</span>
-                        <span><strong>Interdit</strong></span>
-                    </div>
-
-                    <div style="display: flex; align-items: center; margin: 4px 0;">
-                        <span class="material-symbols-outlined" style="color:#e67e22; margin-right: 6px;">lock</span>
-                        <span><strong>Autorisation requise</strong></span>
-                    </div>
-
-                    <div style="display: flex; align-items: center; margin: 4px 0;">
-                        <span class="material-symbols-outlined" style="color:#f39c12; margin-right: 6px;">warning</span>
-                        <span><strong>Restreint / Conditionnel</strong></span>
-                    </div>
-
-                    <div style="display: flex; align-items: center; margin: 4px 0;">
-                        <span class="material-symbols-outlined" style="color:#5b7fa5; margin-right: 6px;">cloud</span>
-                        <span><strong>Info (> 120m)</strong></span>
-                    </div>
-
-                    <div style="background: #fff3cd; border-radius: 4px; padding: 5px; margin-top: 6px; font-size: 0.8em; color: #856404;">
-                        ⚠️ Zones urbaines non cartographiées. Vérifiez les règles locales.
-                    </div>
-                </div>
-            `;
-
-            return div;
-        };
-
-        legend.addTo(map);
-
-        window.toggleLegend = function() {
-            const legendContent = document.querySelector('.legend-content');
-            const legendToggle = document.querySelector('.legend-toggle');
-
-            if (legendContent && legendToggle) {
-                const isShowing = legendContent.classList.contains('show');
-
-                if (isShowing) {
-                    legendContent.classList.remove('show');
-                    legendToggle.classList.remove('hidden');
-                } else {
-                    legendContent.classList.add('show');
-                    legendToggle.classList.add('hidden');
-                }
-            }
-        };
-    }
-
-    private _addMiniMapControl(): void {
-        const map = this.mapService.getMap();
-        if (!map) return;
-
-        // Créer une couche OSM pour la minimap
-        const miniMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OSM contributors',
-            maxZoom: 18
-        });
-
-        // @ts-ignore - Leaflet MiniMap type definitions might be missing
-        const miniMap = new L.Control.MiniMap(miniMapLayer, {
-            position: 'bottomright',
-            width: 150,
-            height: 150,
-            zoomLevelOffset: -5,
-            toggleDisplay: true
-        });
-
-        miniMap.addTo(map);
-        this.miniMap = miniMap;
-        this.currentMiniMapLayer = miniMapLayer;
-
-        map.on('baselayerchange', (e: any) => {
-            this._updateMiniMapLayer(e.layer);
-        });
-    }
-
-    private _updateMiniMapLayer(newLayer: any): void {
-        if (!this.miniMap || !this.currentMiniMapLayer) return;
-
-        try {
-            this.miniMap._miniMap.removeLayer(this.currentMiniMapLayer);
-
-            const baseMapsConfig = Config.LAYERS_CONFIG.baseMaps;
-
-            if (newLayer._url && (newLayer._url.includes('arcgisonline.com') || newLayer._url.includes('satellite'))) {
-                // @ts-ignore
-                const satUrl = typeof baseMapsConfig.satellite.url === 'function' ? baseMapsConfig.satellite.url() : baseMapsConfig.satellite.url;
-                this.currentMiniMapLayer = L.tileLayer(satUrl, {
-                    attribution: '&copy; Esri',
-                    maxZoom: 19
-                });
-            } else {
-                this.currentMiniMapLayer = L.tileLayer(baseMapsConfig.osm.url, {
-                    attribution: '&copy; OSM contributors',
-                    maxZoom: 18
-                });
-            }
-
-            this.miniMap._miniMap.addLayer(this.currentMiniMapLayer);
-        } catch (error) {
-            console.warn('Erreur lors de la mise à jour du minimap:', error);
-        }
-    }
-
-    private _addLocateControl(): L.Control | undefined {
-        const map = this.mapService.getMap();
-        const analytics = window.analyticsService;
-
-        if (!map) return;
-
-        // @ts-ignore
-        const locateControl = L.control.locate({
-            position: 'topleft',
-            strings: {
-                title: "Me géolocaliser",
-                popup: "Vous êtes dans un rayon de {distance} {unit} de ce point",
-                outsideMapBoundsMsg: "Vous semblez être en dehors des limites de la carte"
-            },
-            locateOptions: {
-                maxZoom: 16,
-                watch: false,
-                enableHighAccuracy: true,
-                maximumAge: 30000,
-                timeout: 15000
-            },
-            onLocationError: function(err: any) {
-                console.warn('Erreur de géolocalisation:', err.message);
-                let userMessage = '';
-                if (err.code === 1) userMessage = 'Veuillez autoriser la géolocalisation dans les réglages de votre navigateur';
-                else if (err.code === 2) userMessage = 'Position indisponible. Vérifiez votre connexion GPS';
-                else if (err.code === 3) userMessage = 'La géolocalisation prend trop de temps. Réessayez';
-                else userMessage = 'Impossible d\'obtenir votre position';
-
-                if (console) console.info('Géolocalisation:', userMessage);
-            }
-        }).addTo(map);
-
-        if (analytics) {
-            map.on('locationfound', () => {
-                analytics.trackGeolocation(true);
-            });
-
-            map.on('locationerror', (e: any) => {
-                analytics.trackGeolocation(false);
-                console.debug('Location error:', e.message);
-            });
-        }
-
-        return locateControl;
-    }
-
-    private _initializeLucideIcons(): void {
-        setTimeout(() => {
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
-            this._setupClickOutsideToClose();
-        }, 500);
-    }
-
-    private _setupClickOutsideToClose(): void {
-        if (window.innerWidth <= 768) {
-            document.addEventListener('click', function(e) {
-                const legendControl = document.querySelector('.info.legend');
-                const legendContent = document.querySelector('.legend-content');
-                const legendToggle = document.querySelector('.legend-toggle');
-
-                if (legendContent && legendContent.classList.contains('show') &&
-                    legendControl && !legendControl.contains(e.target as Node)) {
-
-                    legendContent.classList.remove('show');
-                    if (legendToggle) {
-                        legendToggle.classList.remove('hidden');
-                    }
-                }
-            });
-        }
-    }
-
-    private _loadInitialLayers(): void {
-        // Init logic for layers if any
-    }
-
-    private _setupTileErrorHandling(): void {
-        const map = this.mapService.getMap();
-        if (map) {
-            map.on('tileerror', function(_e) {
-                // Silent error
-            });
-        }
-    }
-
-    async loadGeoJSONLayer(filePath: string, layerKey: string): Promise<L.GeoJSON> {
-        try {
-            const layer = await this.layerService.loadGeoJSONFromFile(filePath);
-            this.mapService.addOverlayLayer(layerKey, layer);
-            return layer;
-        } catch (error) {
-            console.error(`Error loading GeoJSON layer from ${filePath}:`, error);
-            this._showErrorMessage(`Erreur lors du chargement du fichier ${filePath}`);
-            throw error;
-        }
-    }
-
-    private _handleResize(): void {
-        const map = this.mapService.getMap();
-        if (map) {
-            setTimeout(() => {
-                map.invalidateSize();
-            }, 100);
-        }
-    }
-
-    private _showErrorMessage(message: string): void {
-        console.error(message);
-    }
-
-
-
-    getMapService(): MapService {
-        return this.mapService;
-    }
-
-    getLayerService(): LayerService {
-        return this.layerService;
-    }
-
-    centerMapOnLocation(lat: number, lng: number, zoom: number = 15): void {
-        this.mapService.setView([lat, lng], zoom);
-    }
-
-    fitMapToBounds(bounds: L.LatLngBoundsExpression): void {
-        this.mapService.fitBounds(bounds);
-    }
-
     private _addDomTomGeocoder(): void {
         const map = this.mapService.getMap();
         if (!map) return;
 
-        const geocoderControl = new L.Control({position: 'topright'});
-
-        geocoderControl.onAdd = (_map) => {
-            const div = L.DomUtil.create('div', 'domtom-geocoder');
-            div.innerHTML = `
-                <div class="custom-select" id="domtom-select">
-                    <div class="select-trigger">
-                        <span class="selected-option">🌍</span>
-                        <i class="dropdown-arrow">▼</i>
+        const control: maplibregl.IControl = {
+            onAdd: () => {
+                const div = document.createElement('div');
+                div.className = 'maplibregl-ctrl domtom-geocoder';
+                div.innerHTML = `
+                    <div class="custom-select" id="domtom-select">
+                        <div class="select-trigger">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">public</span>
+                            <span class="selected-text">Territoire</span>
+                            <span class="dropdown-arrow material-symbols-outlined" style="font-size: 14px;">expand_more</span>
+                        </div>
+                        <div class="select-options">
+                            <div class="select-option" data-value="metropole">
+                                <img src="https://flagcdn.com/w40/fr.png" alt="France" class="flag-icon" />
+                                <span class="option-text">Métropole</span>
+                            </div>
+                            <div class="select-option" data-value="antilles">
+                                <img src="https://flagcdn.com/w40/mq.png" alt="Martinique" class="flag-icon" />
+                                <span class="option-text">Antilles</span>
+                            </div>
+                            <div class="select-option" data-value="guyane">
+                                <img src="https://flagcdn.com/w40/gf.png" alt="Guyane" class="flag-icon" />
+                                <span class="option-text">Guyane</span>
+                            </div>
+                            <div class="select-option" data-value="reunion">
+                                <img src="https://flagcdn.com/w40/re.png" alt="Réunion" class="flag-icon" />
+                                <span class="option-text">Réunion</span>
+                            </div>
+                            <div class="select-option" data-value="mayotte">
+                                <img src="https://flagcdn.com/w40/yt.png" alt="Mayotte" class="flag-icon" />
+                                <span class="option-text">Mayotte</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="select-options">
-                        <div class="select-option" data-value="metropole">
-                            <img src="https://flagcdn.com/w40/fr.png" alt="France" class="flag-icon">
-                            <span class="option-text">Métropole</span>
-                        </div>
-                        <div class="select-option" data-value="antilles">
-                            <img src="https://flagcdn.com/w40/mq.png" alt="Martinique" class="flag-icon">
-                            <span class="option-text">Antilles</span>
-                        </div>
-                        <div class="select-option" data-value="guyane">
-                            <img src="https://flagcdn.com/w40/gf.png" alt="Guyane" class="flag-icon">
-                            <span class="option-text">Guyane</span>
-                        </div>
-                        <div class="select-option" data-value="reunion">
-                            <img src="https://flagcdn.com/w40/re.png" alt="Réunion" class="flag-icon">
-                            <span class="option-text">Réunion</span>
-                        </div>
-                        <div class="select-option" data-value="mayotte">
-                            <img src="https://flagcdn.com/w40/yt.png" alt="Mayotte" class="flag-icon">
-                            <span class="option-text">Mayotte</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-            L.DomEvent.disableClickPropagation(div);
-            L.DomEvent.disableScrollPropagation(div);
-            return div;
+                `;
+                div.addEventListener('click', (e) => e.stopPropagation());
+                setTimeout(() => this._setupCustomSelect(), 100);
+                return div;
+            },
+            onRemove: () => {}
         };
-
-        geocoderControl.addTo(map);
-
-        setTimeout(() => {
-            this._setupCustomSelect();
-        }, 100);
+        map.addControl(control, 'top-right');
     }
 
     private _setupCustomSelect(): void {
-        const customSelect = document.getElementById('domtom-select');
-        if (!customSelect) return;
-
-        const trigger = customSelect.querySelector('.select-trigger');
-        const selectOptions = customSelect.querySelectorAll('.select-option');
-
+        const cs = document.getElementById('domtom-select');
+        if (!cs) return;
+        const trigger = cs.querySelector('.select-trigger');
         if (!trigger) return;
 
-        trigger.addEventListener('click', (e) => {
-            e.stopPropagation();
-            customSelect.classList.toggle('active');
-        });
+        trigger.addEventListener('click', (e) => { e.stopPropagation(); cs.classList.toggle('active'); });
 
-        selectOptions.forEach(option => {
-            option.addEventListener('click', (e) => {
+        cs.querySelectorAll('.select-option').forEach(opt => {
+            opt.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const value = option.getAttribute('data-value');
-
-                if (value) {
-                    this.navigateToTerritory(value);
-                }
-
-                const selectedIcon = trigger.querySelector('.selected-option');
-                if (selectedIcon) selectedIcon.textContent = '🌍';
-                customSelect.classList.remove('active');
+                const val = opt.getAttribute('data-value');
+                if (val) this.navigateToTerritory(val);
+                cs.classList.remove('active');
             });
         });
 
-        document.addEventListener('click', () => {
-            customSelect.classList.remove('active');
-        });
+        document.addEventListener('click', () => cs.classList.remove('active'));
     }
 
     navigateToTerritory(territoryKey: string): void {
         const territories = Config.DOMTOM_CONFIG;
-        // @ts-ignore
-        const territory = territories[territoryKey];
-
+        const territory = territories[territoryKey as keyof typeof territories];
         if (territory) {
-            this.mapService.setView(territory.center as L.LatLngExpression, territory.zoom);
-            if (window.analyticsService) {
-                window.analyticsService.trackRegionChange(territory.name);
-            }
+            this.mapService.setView(territory.center, territory.zoom);
+            window.analyticsService?.trackRegionChange(territory.name);
         }
     }
+
+    // ── Utilities ──
+
+    private _setupResponsiveEvents(): void {
+        window.addEventListener('resize', () => this.mapService.getMap()?.resize());
+    }
+
+    private _setupAnalyticsTracking(): void {
+        const map = this.mapService.getMap();
+        const analytics = window.analyticsService;
+        if (!analytics || !map) return;
+        map.on('zoomend', () => {
+            analytics.trackMapInteraction('zoom', { zoom: map.getZoom(), center: map.getCenter() });
+        });
+    }
+
+    getMapService(): MapService { return this.mapService; }
+    getLayerService(): LayerService { return this.layerService; }
 }

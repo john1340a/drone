@@ -1,4 +1,4 @@
-import L from 'leaflet';
+import maplibregl from 'maplibre-gl';
 import MapService from '../services/MapService';
 
 declare global {
@@ -10,114 +10,91 @@ declare global {
 import osmImage from '../../assets/images/osm.png';
 import satelliteImage from '../../assets/images/satellite.png';
 
-export default class BasemapSwitcher {
+export default class BasemapSwitcher implements maplibregl.IControl {
     private mapService: MapService;
-    private baseMaps: Record<string, L.TileLayer>;
     private currentBasemap: string;
-    private control: L.Control | null;
+    private container: HTMLElement | null;
+    private onSwitch: ((basemapKey: string) => void) | null;
 
-    constructor(mapService: MapService, baseMaps: Record<string, L.TileLayer>) {
+    constructor(mapService: MapService, onSwitch?: (basemapKey: string) => void) {
         this.mapService = mapService;
-        this.baseMaps = baseMaps;
-        this.currentBasemap = 'osm';
-        this.control = null;
+        this.onSwitch = onSwitch || null;
+        this.currentBasemap = 'jawg';
+        this.container = null;
     }
 
-    createControl(): L.Control {
-        const BasemapControl = L.Control.extend({
-            options: {
-                position: 'topright'
-            },
+    onAdd(_map: maplibregl.Map): HTMLElement {
+        this.container = document.createElement('div');
+        this.container.className = 'maplibregl-ctrl basemap-switcher';
 
-            onAdd: (_map: L.Map) => {
-                const container = L.DomUtil.create('div', 'leaflet-basemap-switcher leaflet-control');
+        this.container.innerHTML = this._getHTML();
 
-                // Empêcher la propagation des événements de la carte
-                L.DomEvent.disableClickPropagation(container);
-                L.DomEvent.disableScrollPropagation(container);
+        // Prevent map click propagation
+        this.container.addEventListener('click', (e) => e.stopPropagation());
+        this.container.addEventListener('dblclick', (e) => e.stopPropagation());
 
-                // Créer le contenu
-                container.innerHTML = this._getHTML();
+        setTimeout(() => {
+            this._attachEvents();
+        }, 0);
 
-                // Ajouter les événements après insertion dans le DOM
-                setTimeout(() => {
-                    this._attachEvents(container);
-                }, 0);
+        return this.container;
+    }
 
-                return container;
-            }
-        });
-
-        this.control = new BasemapControl();
-        return this.control;
+    onRemove(): void {
+        if (this.container && this.container.parentNode) {
+            this.container.parentNode.removeChild(this.container);
+        }
+        this.container = null;
     }
 
     private _getHTML(): string {
-        const nextBasemap = this.currentBasemap === 'osm' ? 'satellite' : 'osm';
+        const nextBasemap = this.currentBasemap === 'jawg' ? 'satellite' : 'jawg';
         const imageSrc = nextBasemap === 'satellite' ? satelliteImage : osmImage;
-        
+
         return `
-            <div class="basemap-switcher-container single-toggle">
-                <button class="basemap-toggle-btn" title="Changer de fond de carte">
-                    <img src="${imageSrc}" alt="Switch Basemap" class="basemap-thumbnail" />
-                </button>
-            </div>
+            <button class="basemap-toggle-btn" title="Changer de fond de carte">
+                <img src="${imageSrc}" alt="Switch Basemap" />
+            </button>
         `;
     }
 
-    private _attachEvents(container: HTMLElement): void {
-        const btn = container.querySelector('.basemap-toggle-btn');
+    private _attachEvents(): void {
+        if (!this.container) return;
+        const btn = this.container.querySelector('.basemap-toggle-btn');
         if (btn) {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this._toggleBasemap(container);
+                this._toggleBasemap();
             });
         }
     }
 
-    private _toggleBasemap(container: HTMLElement): void {
-        const nextBasemap = this.currentBasemap === 'osm' ? 'satellite' : 'osm';
-        this._switchBasemap(nextBasemap, container);
+    private _toggleBasemap(): void {
+        const nextBasemap = this.currentBasemap === 'jawg' ? 'satellite' : 'jawg';
+        this._switchBasemap(nextBasemap);
     }
 
-    private _switchBasemap(basemapKey: string, container: HTMLElement): void {
+    private _switchBasemap(basemapKey: string): void {
         if (basemapKey === this.currentBasemap) return;
 
-        // Récupérer la nouvelle couche
-        const newLayer = this.baseMaps[basemapKey];
-
-        // Changer le fond de carte
         this.mapService.setBaseLayer(basemapKey);
         this.currentBasemap = basemapKey;
 
-        // Déclencher l'événement baselayerchange pour la minimap
-        const map = this.mapService.getMap();
-        if (map && newLayer) {
-            map.fire('baselayerchange', {
-                layer: newLayer,
-                name: basemapKey
-            });
+        // Update thumbnail to show the OTHER basemap option
+        if (this.container) {
+            const img = this.container.querySelector('.basemap-thumbnail') as HTMLImageElement;
+            if (img) {
+                const nextBasemap = this.currentBasemap === 'jawg' ? 'satellite' : 'jawg';
+                img.src = nextBasemap === 'satellite' ? satelliteImage : osmImage;
+            }
         }
 
-        // Update Button Image
-        const img = container.querySelector('.basemap-thumbnail') as HTMLImageElement;
-        if (img) {
-            const nextBasemap = this.currentBasemap === 'osm' ? 'satellite' : 'osm';
-            img.src = nextBasemap === 'satellite' ? satelliteImage : osmImage;
+        if (this.onSwitch) {
+            this.onSwitch(basemapKey);
         }
 
-        // Track avec analytics si disponible
         if (window.analyticsService) {
-            window.analyticsService.trackEvent('basemap_change', {
-                basemap: basemapKey
-            });
+            window.analyticsService.trackEvent('basemap_change', { basemap: basemapKey });
         }
-    }
-
-    addTo(map: L.Map): this {
-        if (this.control) {
-            this.control.addTo(map);
-        }
-        return this;
     }
 }

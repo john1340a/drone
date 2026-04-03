@@ -1,77 +1,87 @@
 # Architecture du Projet
 
-Ce document décrit l'architecture technique de l'application **Zones de vol Drone**. L'objectif est de fournir une vue d'ensemble pour comprendre les choix de conception et faciliter la maintenance.
+Ce document decrit l'architecture technique de l'application **Zones de vol Drone**.
 
 ## Structure des Dossiers
 
-L'application suit une structure standardisée pour un projet TypeScript/Vite (Pattern 7-1 SASS simplifié pour les styles) :
-
 ```
 /
-├── .github/workflows/   # Configurations CI/CD (GitHub Actions)
-├── docs/                # Documentation technique (Libs, Architecture)
-├── public/              # Fichiers statiques servis à la racine
+├── .github/workflows/   # CI/CD (GitHub Actions)
+├── docs/                # Documentation technique
+├── public/
+│   └── data/            # PMTiles (restrictions_sia, allowed_zones)
 ├── src/
-│   ├── assets/          # Images, fonts, et médias
+│   ├── assets/          # Images (thumbnails basemap)
 │   ├── js/
-│   │   ├── config/      # Configuration globale et constantes
-│   │   ├── controllers/ # Logique d'orchestration (Contrôleurs)
-│   │   ├── controls/    # Composants UI Leaflet personnalisés
-│   │   ├── services/    # Logique métier et accès aux données
-│   │   ├── app.ts       # Point d'entrée de l'application
-│   │   └── leaflet-setup.ts # Configuration globale Leaflet
-│   └── styles/          # Styles SCSS
-│       ├── _variables.scss
-│       ├── _layout.scss
-│       ├── ...
-│       └── main.scss
-├── index.html           # Point d'entrée HTML
-├── vite.config.ts       # Configuration du bundler Vite
-└── tsconfig.json        # Configuration du compilateur TypeScript
+│   │   ├── config/      # Configuration globale (config.ts)
+│   │   ├── controllers/ # Orchestration (MapController.ts)
+│   │   ├── controls/    # Composants UI MapLibre (BasemapSwitcher.ts)
+│   │   ├── services/    # Logique metier (MapService, LayerService, WeatherService, AnalyticsService)
+│   │   ├── utils/       # Utilitaires (GeometryUtils.ts)
+│   │   └── app.ts       # Point d'entree
+│   └── styles/          # SCSS (design system HeroUI-inspired)
+│       ├── _variables.scss   # Design tokens
+│       ├── _layout.scss      # Reset, map container
+│       ├── _components.scss  # Tous les composants UI
+│       ├── _sig.scss         # Styles SIG specifiques
+│       ├── _responsive.scss  # Breakpoints mobile/tablet
+│       └── main.scss         # Import des partials
+├── tests/e2e/           # Tests Playwright
+├── index.html           # Point d'entree HTML
+├── vite.config.ts       # Configuration Vite
+└── tsconfig.json        # Configuration TypeScript
 ```
 
-## Patterns de Conception (Design Patterns)
+## Design Patterns
 
-L'application n'utilise pas de framework JS lourd (React/Vue) mais une architecture orientée objet structurée autour de **Services** et **Contrôleurs**.
+L'application utilise une architecture orientee objet structuree autour de **Services** et **Controleurs**, sans framework JS lourd.
 
-### 1. Modèle MVC (Adapté)
+### MVC (Adapte)
 
-- **Model (Données)** : Géré principalement par les services (`LayerService`, `Config`). Les données sont statiques (GeoJSON) ou distantes (WMS).
-- **View (Vue)** : HTML statique + Composants Leaflet + Fomantic UI. La vue est manipulée par le Contrôleur.
-- **Controller (Contrôleur)** : `MapController` est le chef d'orchestre. Il initialise les services, écoute les événements de la vue, et met à jour l'interface.
+- **Model (Donnees)** : PMTiles vector tiles charges nativement par MapLibre. Configuration dans `config.ts`. Donnees meteo via Open-Meteo API.
+- **View (Vue)** : Carte MapLibre GL JS + composants UI implementant `maplibregl.IControl`. Styles SCSS avec design tokens HeroUI.
+- **Controller** : `MapController` orchestre l'initialisation de la carte, le chargement des couches, les handlers de clic, et tous les controles UI.
 
-### 2. Injection de Dépendances (DI)
+### Injection de Dependances
 
-Les classes sont conçues pour recevoir leurs dépendances via le constructeur, facilitant les tests et le découplage.
-_Exemple :_ `BasemapSwitcher` reçoit `MapService` en argument.
+Les classes recoivent leurs dependances via le constructeur.
+Exemple : `BasemapSwitcher` recoit `MapService` et un callback `onSwitch` pour synchroniser la minimap.
 
-### 3. Singleton (Services)
+### Services
 
-Bien que non strictement appliqués via `class static instance`, les services comme `AnalyticsService` agissent comme des singletons dans le cycle de vie de l'application (instanciés une seule fois dans `app.ts`).
+- `MapService` : lifecycle de la carte MapLibre, gestion des basemaps (Jawg/Satellite), protocole PMTiles
+- `LayerService` : ajout des sources/layers vectoriels, expressions de style MapLibre, construction du HTML des popups
+- `WeatherService` : appels API Open-Meteo, calcul du statut de securite vent
+- `AnalyticsService` : wrapper Google Analytics 4
 
-## Flux de Données
+## Flux de Donnees
 
-1.  **Initialisation (`app.ts`)** :
-    - Chargement de la configuration.
-    - Instanciation des services (`MapService`, `LayerService`, `AnalyticsService`).
-    - Instanciation du contrôleur (`MapController`).
-2.  **Démarrage (`MapController.initialize()`)** :
-    - Le contrôleur demande au `MapService` de créer la carte.
-    - Il demande au `LayerService` les couches à ajouter.
-    - Il configure les écouteurs d'événements (UI, Carte).
+1. **Initialisation (`app.ts`)** : instancie `MapController` qui cree `MapService`, `LayerService`, `WeatherService`
+2. **Chargement carte (`MapService.initializeMap()`)** : cree la carte MapLibre avec le style initial (sources raster Jawg + Satellite), enregistre le protocole PMTiles
+3. **Evenement `map.on('load')`** : le controller ajoute les couches vectorielles via `LayerService`, configure les handlers de clic, et ajoute tous les controles UI
+4. **Interaction utilisateur** : `map.queryRenderedFeatures()` detecte les features sous le curseur pour afficher le popup appropriate
 
 ## Gestion des Environnements
 
-L'application utilise **Vite** pour la gestion des variables d'environnement.
+- **Variables d'environnement** : via `import.meta.env` (Vite)
+  - `VITE_JAWG_MAPS_API` : token Jawg Maps (obligatoire)
+  - `VITE_GA_MEASUREMENT_ID` : Google Analytics (optionnel)
+- **Production** : injection des secrets via GitHub Actions lors du build
 
-- **Local** (`.env`) : Variables pour le développement.
-- **Production** (GitHub Actions) : Injection des secrets (ex: `VITE_GA_MEASUREMENT_ID`) lors du build.
-- **Accès dans le code** : Via `import.meta.env`.
+## Controles UI (IControl)
 
-## Qualité & Tests
+Tous les controles de la carte implementent l'interface `maplibregl.IControl` (`onAdd(map)` retourne un `HTMLElement`, `onRemove(map)`).
 
-L'application maintient un haut niveau de qualité grâce à :
-
-1.  **Typage Strict** : TypeScript empêche la plupart des erreurs de runtime.
-2.  **Linting** : ESLint assure la cohérence du code.
-3.  **Tests E2E** : **Playwright** valide automatiquement les scénarios critiques (chargement de la carte, contrôle des couches, responsive design mobile) avant chaque déploiement.
+| Controle | Position | Comportement |
+|----------|----------|-------------|
+| Titre | top-left | Statique |
+| Navigation (zoom) | top-left | Natif MapLibre |
+| Geolocalisation | top-left | Natif MapLibre (`GeolocateControl`) |
+| Recherche adresse | top-left | Compact (icone), expand au hover/focus, API Nominatim |
+| Basemap switcher | top-right | Toggle Jawg/Satellite avec thumbnail |
+| Layer control | top-right | Compact (icone), panel au hover vers la gauche |
+| Territoires DOM-TOM | top-right | Compact (icone globe), dropdown au hover |
+| Widget meteo | top-right | Affiche vent (vitesse, direction, statut securite) |
+| Echelle | bottom-left | Natif MapLibre |
+| Legende | bottom-left | Collapsible sur mobile, toujours visible desktop |
+| Minimap | bottom-right | Carte secondaire synchronisee (position + basemap) |

@@ -58,3 +58,5 @@ list_wfs.js
 capabilities.xml
 analyze_*.js
 check_*.js
+
+CLAUDE.md

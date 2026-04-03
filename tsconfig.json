@@ -18,7 +18,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["vite/client", "leaflet", "jquery"]
+    "types": ["vite/client", "jquery"]
   },
   "include": ["src/**/*.ts", "vite.config.ts"],
   "exclude": ["node_modules"]
