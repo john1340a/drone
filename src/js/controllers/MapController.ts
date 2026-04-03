@@ -256,7 +256,12 @@ export default class MapController {
                     <button class="legend-toggle" onclick="window.toggleLegend()">
                         <span class="material-symbols-outlined">info</span>
                     </button>
-                    <div class="legend-header">Légende SIA</div>
+                    <div class="legend-header">
+                        <span>Légende SIA</span>
+                        <button class="legend-close" onclick="window.toggleLegend()">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
                     <div class="legend-content">
                         <div class="legend-item highlight">
                             <span class="legend-dot" style="background: #006FEE;"></span>

@@ -449,8 +449,10 @@
 
 /* === Basemap Switcher === */
 .basemap-switcher {
-  @include glass-card;
-  padding: 3px;
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
 
   .basemap-toggle-btn {
     background: none;
@@ -458,7 +460,7 @@
     border-radius: $radius-sm;
     padding: 0;
     cursor: pointer;
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+    box-shadow: none;
     width: 64px;
     height: 64px;
     overflow: hidden;
@@ -509,7 +511,28 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     color: $foreground-tertiary;
+  }
+
+  .legend-close {
+    display: none; /* Hidden on desktop */
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    line-height: 1;
+
+    .material-symbols-outlined {
+      font-size: 16px;
+      color: $foreground-tertiary;
+    }
+
+    &:hover .material-symbols-outlined {
+      color: $foreground;
+    }
   }
 
   .legend-content {

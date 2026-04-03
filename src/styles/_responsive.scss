@@ -61,6 +61,8 @@
       .legend-header,
       .legend-content,
       .legend-warning { display: block; }
+      .legend-header { display: flex; }
+      .legend-close { display: block; }
     }
   }
 
